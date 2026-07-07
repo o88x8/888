@@ -141,7 +141,7 @@ local TweenButton = SBRTab:CreateButton({
 })
 
 -- =========================================================
--- FARM TAB CONTENT (CHESTS) - FIXED COLLECTION
+-- FARM TAB CONTENT (CHESTS) - ANTI-KNOCKBACK VERSION
 -- =========================================================
 
 local AutoFarmChestsToggle = FarmTab:CreateToggle({
@@ -188,24 +188,41 @@ task.spawn(function()
                          or model:FindFirstChildWhichIsA("MeshPart")
             
             if targetPart then
-               -- Stop velocity
+               -- Initial Teleport
                RootPart.AssemblyLinearVelocity = Vector3.zero
                RootPart.AssemblyAngularVelocity = Vector3.zero
-               
-               -- Teleport EXACTLY to the part (no offset, no height)
                RootPart.CFrame = targetPart.CFrame
                
-               -- IMPORTANT: Wait for server to register your position
+               -- ANTI-KNOCKBACK LOOP: Keep teleporting back if you get hit
+               local maxDistance = 15 -- If you are further than 15 studs, you got hit
+               local safetyTimer = 0
+               
+               while (RootPart.Position - targetPart.Position).Magnitude > maxDistance do
+                  RootPart.AssemblyLinearVelocity = Vector3.zero
+                  RootPart.CFrame = targetPart.CFrame
+                  task.wait(0.05)
+                  safetyTimer = safetyTimer + 0.05
+                  
+                  -- Failsafe so it doesn't get stuck forever on a buggy chest
+                  if safetyTimer > 2 then 
+                     break 
+                  end
+               end
+               
+               -- Final settle time for the server
                task.wait(0.25)
                
                -- Find and fire the prompt
                local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true)
                if prompt then
-                  -- Fire with actual hold duration (not 0)
-                  -- This is more reliable and less likely to be flagged
+                  -- Clear velocity one last time right before firing
+                  RootPart.AssemblyLinearVelocity = Vector3.zero
+                  RootPart.CFrame = targetPart.CFrame
+                  task.wait(0.05)
+                  
                   fireproximityprompt(prompt)
                   
-                  -- Extra: Also try pressing E as backup
+                  -- Backup E key press
                   VirtualInputManager:SendKeyEvent(true, "E", false, game)
                   task.wait(0.2)
                   VirtualInputManager:SendKeyEvent(false, "E", false, game)
