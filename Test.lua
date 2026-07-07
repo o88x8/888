@@ -142,7 +142,13 @@ local RefreshButton = SBRTab:CreateButton({
          end
       end
 
-      CorpseDropdown:Refresh(DisplayNames, true)
+      -- Safety check to prevent crashing if empty
+      if #DisplayNames > 0 then
+         CorpseDropdown:Refresh(DisplayNames, true)
+      else
+         CorpseDropdown:Refresh({}, true)
+      end
+      
       Rayfield:Notify({Title = "Updated", Content = "Found " .. #DisplayNames .. " corpses!", Duration = 3})
    end,
 })
@@ -202,11 +208,22 @@ local AutoFarmChestsToggle = FarmTab:CreateToggle({
 -- Separator Label
 FarmTab:CreateLabel("─────────────────────")
 
--- Chest Rewards List (Paragraph)
-local ChestListParagraph = FarmTab:CreateParagraph({
-   Title = "Chest Rewards",
-   Content = "Click 'Refresh' below to load chest rewards...",
-})
+-- Function to properly update the paragraph (since Rayfield doesn't have a :Set() method)
+local ChestListParagraph = nil
+
+local function UpdateChestList(title, content)
+    if ChestListParagraph then
+        ChestListParagraph:Destroy() -- Remove old paragraph
+    end
+    -- Create new paragraph with updated text
+    ChestListParagraph = FarmTab:CreateParagraph({
+        Title = title,
+        Content = content
+    })
+end
+
+-- Create initial paragraph
+UpdateChestList("Chest Rewards", "Click 'Refresh' below to load chest rewards...")
 
 -- Refresh Chest Rewards Button
 FarmTab:CreateButton({
@@ -215,7 +232,7 @@ FarmTab:CreateButton({
       local SpawnedChests = workspace:FindFirstChild("Chests") and workspace.Chests:FindFirstChild("SpawnedChests")
       
       if not SpawnedChests then
-         ChestListParagraph:Set("Chest Rewards", "❌ SpawnedChests folder not found!")
+         UpdateChestList("Chest Rewards", "❌ SpawnedChests folder not found!")
          return
       end
       
@@ -227,7 +244,7 @@ FarmTab:CreateButton({
       end
       
       if #chests == 0 then
-         ChestListParagraph:Set("Chest Rewards", "No chests currently spawned.")
+         UpdateChestList("Chest Rewards", "No chests currently spawned.")
          return
       end
       
@@ -258,7 +275,7 @@ FarmTab:CreateButton({
          end
       end
       
-      ChestListParagraph:Set("Chest Rewards (" .. chestCount .. ")", listText)
+      UpdateChestList("Chest Rewards (" .. chestCount .. ")", listText)
       Rayfield:Notify({Title = "Updated", Content = "Found " .. chestCount .. " chests!", Duration = 3})
    end,
 })
@@ -306,7 +323,7 @@ task.spawn(function()
          end
       end
       
-      ChestListParagraph:Set("Chest Rewards (" .. chestCount .. ")", listText)
+      UpdateChestList("Chest Rewards (" .. chestCount .. ")", listText)
    end
 end)
 
