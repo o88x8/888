@@ -141,90 +141,8 @@ local TweenButton = SBRTab:CreateButton({
 })
 
 -- =========================================================
--- FARM TAB CONTENT (CHESTS)
+-- FARM TAB CONTENT (CHESTS) - FIXED COLLECTION
 -- =========================================================
-
--- DEBUG: Find out HOW chests are collected
-FarmTab:CreateButton({
-   Name = "🔍 Find Collection Method",
-   Callback = function()
-      local SpawnedChests = workspace:FindFirstChild("Chests") and workspace.Chests:FindFirstChild("SpawnedChests")
-      
-      if not SpawnedChests then
-         Rayfield:Notify({Title = "Error", Content = "SpawnedChests not found!", Duration = 3})
-         return
-      end
-      
-      local output = "=== CHEST ANALYSIS ===\n\n"
-      local foundMethod = false
-      
-      for _, model in pairs(SpawnedChests:GetChildren()) do
-         if model:IsA("Model") then
-            output = output .. "Chest: " .. model.Name .. "\n"
-            
-            -- Check ProximityPrompt
-            for _, prompt in pairs(model:GetDescendants()) do
-               if prompt:IsA("ProximityPrompt") then
-                  output = output .. "  ✅ ProximityPrompt: " .. prompt.Name .. "\n"
-                  output = output .. "     ActionText: " .. tostring(prompt.ActionText) .. "\n"
-                  output = output .. "     HoldDuration: " .. tostring(prompt.HoldDuration) .. "\n"
-                  output = output .. "     RequiresLineOfSight: " .. tostring(prompt.RequiresLineOfSight) .. "\n"
-                  foundMethod = true
-               end
-            end
-            
-            -- Check ClickDetector
-            for _, click in pairs(model:GetDescendants()) do
-               if click:IsA("ClickDetector") then
-                  output = output .. "  ✅ ClickDetector: " .. click.Name .. "\n"
-                  foundMethod = true
-               end
-            end
-            
-            -- Check for RemoteEvents (inside model or parent scripts)
-            output = output .. "  Scripts inside:\n"
-            for _, script in pairs(model:GetDescendants()) do
-               if script:IsA("Script") or script:IsA("LocalScript") then
-                  output = output .. "    - " .. script.Name .. " (" .. script.ClassName .. ")\n"
-               end
-            end
-            
-            -- Check attributes
-            output = output .. "  Attributes:\n"
-            for attr, val in pairs(model:GetAttributes()) do
-               output = output .. "    - " .. attr .. " = " .. tostring(val) .. "\n"
-            end
-            
-            -- Check for values inside
-            for _, child in pairs(model:GetChildren()) do
-               if child:IsA("StringValue") or child:IsA("IntValue") or child:IsA("ObjectValue") then
-                  output = output .. "  Value: " .. child.Name .. " = " .. tostring(child.Value) .. " (" .. child.ClassName .. ")\n"
-               end
-            end
-            
-            output = output .. "\n"
-            break -- Only check first chest
-         end
-      end
-      
-      -- Also check ReplicatedStorage for chest remotes
-      output = output .. "=== CHECKING REPLICATEDSTORAGE ===\n"
-      for _, desc in pairs(game.ReplicatedStorage:GetDescendants()) do
-         local nameLower = string.lower(desc.Name)
-         if desc:IsA("RemoteEvent") and (nameLower:find("chest") or nameLower:find("collect") or nameLower:find("loot") or nameLower:find("open")) then
-            output = output .. "  🔥 RemoteEvent: " .. desc:GetFullName() .. "\n"
-            foundMethod = true
-         end
-         if desc:IsA("RemoteFunction") and (nameLower:find("chest") or nameLower:find("collect") or nameLower:find("loot") or nameLower:find("open")) then
-            output = output .. "  🔥 RemoteFunction: " .. desc:GetFullName() << "\n"
-            foundMethod = true
-         end
-      end
-      
-      print(output)
-      Rayfield:Notify({Title = "Done", Content = "Check F9 console for results!", Duration = 5})
-   end,
-})
 
 local AutoFarmChestsToggle = FarmTab:CreateToggle({
    Name = "Auto Farm Chests",
@@ -252,6 +170,7 @@ task.spawn(function()
       
       if not SpawnedChests then continue end
       
+      -- Collect all chest models
       local chests = {}
       for _, child in pairs(SpawnedChests:GetChildren()) do
          if child:IsA("Model") then
@@ -269,30 +188,31 @@ task.spawn(function()
                          or model:FindFirstChildWhichIsA("MeshPart")
             
             if targetPart then
-               RootPart.CFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
+               -- Stop velocity
+               RootPart.AssemblyLinearVelocity = Vector3.zero
+               RootPart.AssemblyAngularVelocity = Vector3.zero
                
-               -- Try ALL methods
+               -- Teleport EXACTLY to the part (no offset, no height)
+               RootPart.CFrame = targetPart.CFrame
                
-               -- Method 1: Fire ProximityPrompt
-               for _, prompt in pairs(model:GetDescendants()) do
-                  if prompt:IsA("ProximityPrompt") then
-                     fireproximityprompt(prompt, 0)
-                  end
+               -- IMPORTANT: Wait for server to register your position
+               task.wait(0.25)
+               
+               -- Find and fire the prompt
+               local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true)
+               if prompt then
+                  -- Fire with actual hold duration (not 0)
+                  -- This is more reliable and less likely to be flagged
+                  fireproximityprompt(prompt)
+                  
+                  -- Extra: Also try pressing E as backup
+                  VirtualInputManager:SendKeyEvent(true, "E", false, game)
+                  task.wait(0.2)
+                  VirtualInputManager:SendKeyEvent(false, "E", false, game)
                end
                
-               -- Method 2: Fire ClickDetector
-               for _, click in pairs(model:GetDescendants()) do
-                  if click:IsA("ClickDetector") then
-                     fireclickdetector(click)
-                  end
-               end
-               
-               -- Method 3: Simulate E key (short)
-               VirtualInputManager:SendKeyEvent(true, "E", false, game)
+               -- Wait a tiny bit for collection to process
                task.wait(0.15)
-               VirtualInputManager:SendKeyEvent(false, "E", false, game)
-               
-               task.wait(0.1)
             end
          end
       end
