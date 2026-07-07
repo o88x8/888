@@ -1,12 +1,35 @@
+-- 1. Load the Rayfield Library
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local VirtualInputManager = game:GetService("VirtualInputManager")
+
+-- Safely load VirtualInputManager (some executors might block this)
+local VIM_SUCCESS, VirtualInputManager = pcall(function()
+    return game:GetService("VirtualInputManager")
+end)
+
+-- 2. Create the Rayfield Window
+local Window = Rayfield:CreateWindow({
+   Name = "Game Hub",
+   LoadingTitle = "Loading Hub...",
+   LoadingSubtitle = "by AI",
+   ConfigurationSaving = {
+      Enabled = false,
+      FolderName = nil,
+      FileName = "GameHub"
+   },
+   Discord = {
+      Enabled = false,
+   },
+   KeySystem = false,
+})
 
 -- Table to link our Dropdown display name to the actual part in the game
 local CorpseMap = {}
 
--- Create Tabs (Replace "Window" with your Rayfield Window variable if it's different)
+-- Create Tabs
 local SBRTab = Window:CreateTab("SBR", 4483362458) 
 local FarmTab = Window:CreateTab("Farm", 4483362458)
 
@@ -24,7 +47,7 @@ local SpeedSlider = SBRTab:CreateSlider({
    Flag = "TweenSpeed",
 })
 
--- 2. Dropdown (Now will show the Stage!)
+-- 2. Dropdown
 local SelectedCorpseDisplayName = nil
 
 local CorpseDropdown = SBRTab:CreateDropdown({
@@ -38,7 +61,7 @@ local CorpseDropdown = SBRTab:CreateDropdown({
    end,
 })
 
--- 3. Button to Refresh the List (Reads Attributes!)
+-- 3. Button to Refresh the List
 local RefreshButton = SBRTab:CreateButton({
    Name = "Refresh Corpse List",
    Callback = function()
@@ -177,16 +200,28 @@ task.spawn(function()
                               -- Instant TP to the WoodTop position
                               RootPart.CFrame = woodTop.CFrame
                               
-                              -- Look for a ProximityPrompt to fire (fallback if game uses it)
-                              local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true) or woodTop:FindFirstChildWhichIsA("ProximityPrompt", true)
-                              if prompt then
-                                 fireproximityprompt(prompt)
-                              end
+                              -- Safely look for and fire a ProximityPrompt if the game uses it
+                              pcall(function()
+                                 local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true) or woodTop:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                 if prompt then
+                                    fireproximityprompt(prompt)
+                                 end
+                              end)
                               
-                              -- Simulate holding 'E' for 1 second
-                              VirtualInputManager:SendKeyEvent(true, "E", false, game)
-                              task.wait(1)
-                              VirtualInputManager:SendKeyEvent(false, "E", false, game)
+                              -- Safely simulate holding 'E' for 1 second
+                              pcall(function()
+                                 if VIM_SUCCESS and VirtualInputManager then
+                                    VirtualInputManager:SendKeyEvent(true, "E", false, game)
+                                 end
+                              end)
+                              
+                              task.wait(1) -- Hold E for 1 second
+                              
+                              pcall(function()
+                                 if VIM_SUCCESS and VirtualInputManager then
+                                    VirtualInputManager:SendKeyEvent(false, "E", false, game)
+                                 end
+                              end)
                               
                               -- Wait a tiny bit before teleporting to the next chest
                               task.wait(0.2)
@@ -197,9 +232,11 @@ task.spawn(function()
                end
             end
          end
-         task.wait(0.5) -- Short delay before re-scanning the folder for new chests
+         task.wait(0.5) -- Short delay before re-scanning the folder
       else
          task.wait(0.5)
       end
    end
 end)
+
+Rayfield:LoadConfiguration()
