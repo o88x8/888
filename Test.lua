@@ -141,7 +141,7 @@ local TweenButton = SBRTab:CreateButton({
 })
 
 -- =========================================================
--- FARM TAB CONTENT (CHESTS) - ANTI-KNOCKBACK VERSION
+-- FARM TAB CONTENT (CHESTS) - 3 STUD OFFSET + ANTI-KNOCKBACK
 -- =========================================================
 
 local AutoFarmChestsToggle = FarmTab:CreateToggle({
@@ -188,22 +188,25 @@ task.spawn(function()
                          or model:FindFirstChildWhichIsA("MeshPart")
             
             if targetPart then
+               -- Calculate safe teleport position (3 studs above the chest)
+               local safeCFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
+               
                -- Initial Teleport
                RootPart.AssemblyLinearVelocity = Vector3.zero
                RootPart.AssemblyAngularVelocity = Vector3.zero
-               RootPart.CFrame = targetPart.CFrame
+               RootPart.CFrame = safeCFrame
                
-               -- ANTI-KNOCKBACK LOOP: Keep teleporting back if you get hit
-               local maxDistance = 15 -- If you are further than 15 studs, you got hit
+               -- ANTI-KNOCKBACK LOOP
+               -- We set maxDistance to 10 because the 3-stud offset counts as distance
+               local maxDistance = 10 
                local safetyTimer = 0
                
                while (RootPart.Position - targetPart.Position).Magnitude > maxDistance do
                   RootPart.AssemblyLinearVelocity = Vector3.zero
-                  RootPart.CFrame = targetPart.CFrame
+                  RootPart.CFrame = safeCFrame
                   task.wait(0.05)
                   safetyTimer = safetyTimer + 0.05
                   
-                  -- Failsafe so it doesn't get stuck forever on a buggy chest
                   if safetyTimer > 2 then 
                      break 
                   end
@@ -217,7 +220,7 @@ task.spawn(function()
                if prompt then
                   -- Clear velocity one last time right before firing
                   RootPart.AssemblyLinearVelocity = Vector3.zero
-                  RootPart.CFrame = targetPart.CFrame
+                  RootPart.CFrame = safeCFrame
                   task.wait(0.05)
                   
                   fireproximityprompt(prompt)
