@@ -141,85 +141,8 @@ local TweenButton = SBRTab:CreateButton({
 })
 
 -- =========================================================
--- FARM TAB CONTENT (CHESTS)
+-- FARM TAB CONTENT (CHESTS) - FAST VERSION
 -- =========================================================
-
--- TEST BUTTON - Click this and tell me what it says
-FarmTab:CreateButton({
-   Name = "🧪 TEST: Try TP to First Chest",
-   Callback = function()
-      local Character = LocalPlayer.Character
-      if not Character or not Character:FindFirstChild("HumanoidRootPart") then
-         Rayfield:Notify({Title = "Error", Content = "No character!", Duration = 3})
-         return
-      end
-      
-      local SpawnedChests = workspace:FindFirstChild("Chests") and workspace.Chests:FindFirstChild("SpawnedChests")
-      
-      if not SpawnedChests then
-         Rayfield:Notify({Title = "Error", Content = "SpawnedChests not found!", Duration = 3})
-         print("❌ workspace.Chests.SpawnedChests does NOT exist")
-         return
-      end
-      
-      local children = SpawnedChests:GetChildren()
-      print("SpawnedChests has " .. #children .. " children")
-      
-      if #children == 0 then
-         Rayfield:Notify({Title = "Empty", Content = "SpawnedChests has 0 children! No chests spawned?", Duration = 5})
-         print("❌ SpawnedChests is EMPTY")
-         return
-      end
-      
-      -- Find first valid model
-      for i, child in pairs(children) do
-         print("Child " .. i .. ": " .. child.Name .. " (" .. child.ClassName .. ")")
-         
-         if child:IsA("Model") then
-            print("  Is Model: YES")
-            
-            -- Check for WoodTop
-            local woodTop = child:FindFirstChild("WoodTop", true)
-            if woodTop then
-               print("  WoodTop found: " .. woodTop.Name .. " at " .. tostring(woodTop.Position))
-            else
-               print("  WoodTop: NOT FOUND")
-            end
-            
-            -- Check PrimaryPart
-            print("  PrimaryPart: " .. tostring(child.PrimaryPart))
-            
-            -- Find ANY BasePart/MeshPart
-            local anyPart = child:FindFirstChildWhichIsA("BasePart") or child:FindFirstChildWhichIsA("MeshPart")
-            print("  First BasePart/MeshPart: " .. tostring(anyPart))
-            
-            -- List all parts
-            print("  All parts inside:")
-            for _, desc in pairs(child:GetDescendants()) do
-               if desc:IsA("BasePart") or desc:IsA("MeshPart") then
-                  print("    - " .. desc.Name .. " (" .. desc.ClassName .. ")")
-               end
-            end
-            
-            -- Try to teleport
-            local targetPart = woodTop or child.PrimaryPart or anyPart
-            
-            if targetPart then
-               print("  ✅ Attempting TP to: " .. targetPart.Name)
-               Character.HumanoidRootPart.CFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
-               Rayfield:Notify({Title = "Test", Content = "TP'd to " .. child.Name .. "! Check F9 for details.", Duration = 5})
-            else
-               print("  ❌ No valid part to TP to!")
-               Rayfield:Notify({Title = "Failed", Content = "No valid part found! Check F9.", Duration = 5})
-            end
-            
-            break -- Only test first one
-         else
-            print("  Is Model: NO")
-         end
-      end
-   end,
-})
 
 local AutoFarmChestsToggle = FarmTab:CreateToggle({
    Name = "Auto Farm Chests",
@@ -236,65 +159,53 @@ local AutoFarmChestsToggle = FarmTab:CreateToggle({
 })
 
 task.spawn(function()
-   while true do
-      if _G.AutoFarmChests then
-         local Character = LocalPlayer.Character
-         if Character and Character:FindFirstChild("HumanoidRootPart") then
-            local RootPart = Character.HumanoidRootPart
-            local SpawnedChests = workspace:FindFirstChild("Chests") and workspace.Chests:FindFirstChild("SpawnedChests")
+   while task.wait(0.1) do
+      if not _G.AutoFarmChests then continue end
+      
+      local Character = LocalPlayer.Character
+      if not Character or not Character:FindFirstChild("HumanoidRootPart") then continue end
+      
+      local RootPart = Character.HumanoidRootPart
+      local SpawnedChests = workspace:FindFirstChild("Chests") and workspace.Chests:FindFirstChild("SpawnedChests")
+      
+      if not SpawnedChests then continue end
+      
+      -- Collect all chest models into a table
+      local chests = {}
+      for _, child in pairs(SpawnedChests:GetChildren()) do
+         if child:IsA("Model") then
+            table.insert(chests, child)
+         end
+      end
+      
+      -- Loop through chests
+      for _, model in pairs(chests) do
+         if not _G.AutoFarmChests then break end
+         
+         -- Check if chest still exists (might have been collected)
+         if model and model.Parent then
+            -- Find target part
+            local targetPart = model:FindFirstChild("WoodTop", true) 
+                         or model.PrimaryPart 
+                         or model:FindFirstChildWhichIsA("BasePart") 
+                         or model:FindFirstChildWhichIsA("MeshPart")
             
-            if not SpawnedChests then
-               print("[Farm] SpawnedChests not found, stopping.")
-               Rayfield:Notify({Title = "Error", Content = "SpawnedChests not found!", Duration = 3})
-               _G.AutoFarmChests = false
-               task.wait(1)
-            else
-               local chestCount = #SpawnedChests:GetChildren()
-               print("[Farm] Found " .. chestCount .. " chests")
+            if targetPart then
+               -- Instant teleport
+               RootPart.CFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
                
-               if chestCount == 0 then
-                  print("[Farm] No chests spawned, waiting...")
-                  task.wait(2)
-               else
-                  for _, model in pairs(SpawnedChests:GetChildren()) do
-                     if not _G.AutoFarmChests then break end
-                     
-                     print("[Farm] Checking: " .. model.Name)
-                     
-                     if model:IsA("Model") then
-                        local targetPart = model:FindFirstChild("WoodTop", true)
-                        
-                        if not targetPart then
-                           targetPart = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart") or model:FindFirstChildWhichIsA("MeshPart")
-                        end
-                        
-                        if targetPart then
-                           print("[Farm] TPing to " .. targetPart.Name)
-                           RootPart.AssemblyLinearVelocity = Vector3.zero
-                           RootPart.AssemblyAngularVelocity = Vector3.zero
-                           RootPart.CFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
-                           
-                           local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true)
-                           if prompt then
-                              print("[Farm] Found prompt, firing it")
-                              fireproximityprompt(prompt)
-                           end
-                           
-                           VirtualInputManager:SendKeyEvent(true, "E", false, game)
-                           task.wait(1)
-                           VirtualInputManager:SendKeyEvent(false, "E", false, game)
-                           task.wait(0.3)
-                        else
-                           print("[Farm] No valid part found for " .. model.Name)
-                        end
-                     end
+               -- Find and fire ALL proximity prompts instantly
+               for _, prompt in pairs(model:GetDescendants()) do
+                  if prompt:IsA("ProximityPrompt") then
+                     -- Fire with 0 hold duration = instant
+                     fireproximityprompt(prompt, 0)
                   end
                end
+               
+               -- Tiny wait for server to register
+               task.wait(0.05)
             end
          end
-         task.wait(0.5)
-      else
-         task.wait(0.5)
       end
    end
 end)
