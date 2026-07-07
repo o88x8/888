@@ -8,8 +8,8 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Create Window with custom theme, name, and creator
 local Window = Rayfield:CreateWindow({
-    Name = "888-Hub",
-    LoadingTitle = "888-Hub",
+    Name = "888 Hub",
+    LoadingTitle = "888 Hub",
     LoadingSubtitle = "by Sardo",
     ConfigurationSaving = {
         Enabled = true,
