@@ -1,108 +1,205 @@
--- 1. Load the Rayfield Library
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
--- 2. Create the Main Window
-local Window = Rayfield:CreateWindow({
-   Name = "My Awesome Hub",
-   LoadingTitle = "My Hub",
-   LoadingSubtitle = "by YourName",
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = "MyHubConfigs", -- Folder where your settings save
-      FileName = "MyHubConfig"
-   },
-   Discord = {
-      Enabled = false, -- Set to true if you have a Discord server
-      Invite = "noinvitelink", 
-      GuildId = "noid",
-      ChannelId = "noid"
-   },
-   KeySystem = false, -- Set to true if you want a key system
-   KeySettings = {
-      Title = "Untitled",
-      Subtitle = "Key System",
-      Note = "No method of obtaining the key is provided",
-      FileName = "Key",
-      SaveKey = true,
-      Key = {"Hello"}
-   }
+-- Table to link our Dropdown display name to the actual part in the game
+local CorpseMap = {}
+
+-- Create Tabs (Replace "Window" with your Rayfield Window variable if it's different)
+local SBRTab = Window:CreateTab("SBR", 4483362458) 
+local FarmTab = Window:CreateTab("Farm", 4483362458)
+
+-- =========================================================
+-- SBR TAB CONTENT
+-- =========================================================
+
+-- 1. Speed Slider
+local SpeedSlider = SBRTab:CreateSlider({
+   Name = "Tween Speed",
+   Range = {50, 500},
+   Increment = 10,
+   Suffix = "Studs/s",
+   CurrentValue = 150,
+   Flag = "TweenSpeed",
 })
 
--- 3. Create a Tab
-local MainTab = Window:CreateTab("Main", 4483362458) -- The second number is the icon ID (you can change it)
+-- 2. Dropdown (Now will show the Stage!)
+local SelectedCorpseDisplayName = nil
 
--- 4. Create UI Elements
-
--- NOTIFICATION
-Rayfield:Notify({
-   Title = "Welcome!",
-   Content = "Your script has successfully loaded.",
-   Duration = 5,
-   Image = 4483362458,
-})
-
--- BUTTON
-local MyButton = MainTab:CreateButton({
-   Name = "Kill All (Example)",
-   Callback = function()
-      -- Put your code here that runs when the button is clicked
-      Rayfield:Notify({
-         Title = "Button Clicked",
-         Content = "You pressed the example button!",
-         Duration = 3,
-         Image = 4483362458,
-      })
+local CorpseDropdown = SBRTab:CreateDropdown({
+   Name = "Select Corpse",
+   Options = {},
+   CurrentOption = {},
+   MultipleOptions = false,
+   Flag = "CorpseDropdown",
+   Callback = function(Value)
+      SelectedCorpseDisplayName = Value[1] 
    end,
 })
 
--- TOGGLE
-local SpeedToggle = MainTab:CreateToggle({
-   Name = "Enable Fast Speed",
-   CurrentValue = false,
-   Flag = "SpeedToggle", -- A unique identifier for saving configs
-   Callback = function(Value)
-      -- 'Value' is true or false based on the toggle state
-      if Value then
-         print("Speed enabled!")
+-- 3. Button to Refresh the List (Reads Attributes!)
+local RefreshButton = SBRTab:CreateButton({
+   Name = "Refresh Corpse List",
+   Callback = function()
+      local CorpseFolder = workspace:FindFirstChild("CorpseParts") and workspace.CorpseParts:FindFirstChild("SpawnedCorpseParts")
+      
+      if not CorpseFolder then
+         Rayfield:Notify({Title = "Error", Content = "Folder not found!", Duration = 3})
+         return
+      end
+
+      local DisplayNames = {}
+      CorpseMap = {} -- Reset the map
+
+      for _, Child in pairs(CorpseFolder:GetChildren()) do
+         local targetPart = nil
+         local stageValue = nil
+
+         if Child:IsA("Model") then
+            for _, Descendant in pairs(Child:GetDescendants()) do
+               if Descendant:IsA("BasePart") then
+                  local stage = Descendant:GetAttribute("Stage") 
+                  if stage then
+                     targetPart = Descendant
+                     stageValue = stage
+                     break
+                  end
+               end
+            end
+            
+            if not targetPart then
+               targetPart = Child.PrimaryPart or Child:FindFirstChildWhichIsA("BasePart")
+            end
+         
+         elseif Child:IsA("BasePart") then
+            targetPart = Child
+            stageValue = Child:GetAttribute("Stage")
+         end
+
+         if targetPart then
+            local displayName = Child.Name
+            if stageValue then
+               displayName = Child.Name .. " [Stage: " .. tostring(stageValue) .. "]"
+            end
+            
+            table.insert(DisplayNames, displayName)
+            CorpseMap[displayName] = targetPart
+         end
+      end
+
+      CorpseDropdown:Refresh(DisplayNames, true)
+      Rayfield:Notify({Title = "Updated", Content = "Found " .. #DisplayNames .. " corpses!", Duration = 3})
+   end,
+})
+
+-- 4. The Tween Button
+local TweenButton = SBRTab:CreateButton({
+   Name = "Tween to Selected Corpse",
+   Callback = function()
+      local Character = LocalPlayer.Character
+      
+      if not Character or not Character:FindFirstChild("HumanoidRootPart") then
+         Rayfield:Notify({Title = "Error", Content = "Character not found!", Duration = 3})
+         return
+      end
+
+      if not SelectedCorpseDisplayName then
+         Rayfield:Notify({Title = "Error", Content = "Please select a corpse first!", Duration = 3})
+         return
+      end
+
+      local TargetPart = CorpseMap[SelectedCorpseDisplayName]
+
+      if TargetPart and TargetPart:IsA("BasePart") then
+         local RootPart = Character.HumanoidRootPart
+         local Distance = (RootPart.Position - TargetPart.Position).Magnitude
+         local Speed = SpeedSlider.CurrentValue
+         local TweenTime = Distance / Speed
+
+         local TweenInfo = TweenInfo.new(TweenTime, Enum.EasingStyle.Linear)
+         local Tween = TweenService:Create(RootPart, TweenInfo, {CFrame = TargetPart.CFrame})
+         
+         Tween:Play()
+         Rayfield:Notify({Title = "Tweening", Content = "Moving to " .. SelectedCorpseDisplayName, Duration = 3})
       else
-         print("Speed disabled!")
+         Rayfield:Notify({Title = "Error", Content = "Part is missing or was deleted!", Duration = 3})
       end
    end,
 })
 
--- SLIDER
-local WalkSpeedSlider = MainTab:CreateSlider({
-   Name = "WalkSpeed",
-   Range = {16, 200},
-   Increment = 1,
-   Suffix = "Speed",
-   CurrentValue = 16,
-   Flag = "WalkSpeedSlider",
+-- =========================================================
+-- FARM TAB CONTENT (CHESTS)
+-- =========================================================
+
+local AutoFarmChestsToggle = FarmTab:CreateToggle({
+   Name = "Auto Farm Chests",
+   CurrentValue = false,
+   Flag = "AutoFarmChests",
    Callback = function(Value)
-      -- 'Value' is the current number on the slider
-      print("WalkSpeed set to: " .. tostring(Value))
+      _G.AutoFarmChests = Value
+      if Value then
+         Rayfield:Notify({Title = "Farm", Content = "Chest farming started.", Duration = 3})
+      else
+         Rayfield:Notify({Title = "Farm", Content = "Chest farming stopped.", Duration = 3})
+      end
    end,
 })
 
--- DROPDOWN
-local MyDropdown = MainTab:CreateDropdown({
-   Name = "Select Player",
-   Options = {"Player1", "Player2", "Player3"},
-   CurrentOption = {"Player1"},
-   MultipleOptions = false, -- True if you want to select multiple things at once
-   Flag = "PlayerDropdown",
-   Callback = function(Value)
-      -- Value is a table of selected options
-      print("Selected: " .. Value[1])
-   end,
-})
-
--- 5. Optional: Create a second tab for organization
-local MiscTab = Window:CreateTab("Misc", 4483362458)
-
-local DestroyUI = MiscTab:CreateButton({
-   Name = "Destroy UI",
-   Callback = function()
-      Rayfield:Destroy()
-   end,
-})
+-- Background loop for Chest Farming
+task.spawn(function()
+   while true do
+      if _G.AutoFarmChests then
+         local Character = LocalPlayer.Character
+         if Character and Character:FindFirstChild("HumanoidRootPart") then
+            local RootPart = Character.HumanoidRootPart
+            local SpawnedChests = workspace:FindFirstChild("Chests") and workspace.Chests:FindFirstChild("SpawnedChests")
+            
+            if SpawnedChests then
+               -- Loop through all folders inside SpawnedChests
+               for _, folder in pairs(SpawnedChests:GetChildren()) do
+                  if not _G.AutoFarmChests then break end -- Stop immediately if toggled off
+                  
+                  if folder:IsA("Folder") then
+                     -- Loop through all models inside the folder
+                     for _, model in pairs(folder:GetChildren()) do
+                        if not _G.AutoFarmChests then break end
+                        
+                        if model:IsA("Model") then
+                           -- Find the WoodTop MeshPart
+                           local woodTop = model:FindFirstChild("WoodTop", true)
+                           
+                           if woodTop and woodTop:IsA("MeshPart") then
+                              -- Stop momentum so we don't get flung
+                              RootPart.AssemblyLinearVelocity = Vector3.zero
+                              RootPart.AssemblyAngularVelocity = Vector3.zero
+                              
+                              -- Instant TP to the WoodTop position
+                              RootPart.CFrame = woodTop.CFrame
+                              
+                              -- Look for a ProximityPrompt to fire (fallback if game uses it)
+                              local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true) or woodTop:FindFirstChildWhichIsA("ProximityPrompt", true)
+                              if prompt then
+                                 fireproximityprompt(prompt)
+                              end
+                              
+                              -- Simulate holding 'E' for 1 second
+                              VirtualInputManager:SendKeyEvent(true, "E", false, game)
+                              task.wait(1)
+                              VirtualInputManager:SendKeyEvent(false, "E", false, game)
+                              
+                              -- Wait a tiny bit before teleporting to the next chest
+                              task.wait(0.2)
+                           end
+                        end
+                     end
+                  end
+               end
+            end
+         end
+         task.wait(0.5) -- Short delay before re-scanning the folder for new chests
+      else
+         task.wait(0.5)
+      end
+   end
+end)
