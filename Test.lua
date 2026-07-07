@@ -6,19 +6,60 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 -- Load Rayfield Library
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Create Window with K as toggle key
+-- Create Window with custom theme, name, and creator
 local Window = Rayfield:CreateWindow({
-    Name = "SBR Hub",
-    LoadingTitle = "SBR Hub",
-    LoadingSubtitle = "Loading...",
+    Name = "888-Hub",
+    LoadingTitle = "888-Hub",
+    LoadingSubtitle = "by Sardo",
     ConfigurationSaving = {
         Enabled = true,
-        FolderName = "SBRHub",
+        FolderName = "888Hub",
         FileName = "Config"
     },
     KeySystem = false,
     DisableKeyBindings = false,
     ToggleKey = Enum.KeyCode.K,
+    Theme = {
+        TextColor = Color3.fromRGB(240, 240, 240),
+
+        Background = Color3.fromRGB(24, 18, 32),
+        Topbar = Color3.fromRGB(35, 24, 48),
+        Shadow = Color3.fromRGB(18, 12, 28),
+
+        NotificationBackground = Color3.fromRGB(18, 12, 28),
+        NotificationActionsBackground = Color3.fromRGB(232, 220, 255),
+
+        TabBackground = Color3.fromRGB(74, 54, 98),
+        TabStroke = Color3.fromRGB(88, 66, 114),
+        TabBackgroundSelected = Color3.fromRGB(214, 194, 255),
+        TabTextColor = Color3.fromRGB(240, 240, 240),
+        SelectedTabTextColor = Color3.fromRGB(52, 30, 74),
+
+        ElementBackground = Color3.fromRGB(40, 28, 54),
+        ElementBackgroundHover = Color3.fromRGB(48, 34, 66),
+        SecondaryElementBackground = Color3.fromRGB(28, 20, 40),
+        ElementStroke = Color3.fromRGB(72, 54, 96),
+        SecondaryElementStroke = Color3.fromRGB(58, 42, 78),
+
+        SliderBackground = Color3.fromRGB(132, 74, 214),
+        SliderProgress = Color3.fromRGB(168, 98, 255),
+        SliderStroke = Color3.fromRGB(188, 128, 255),
+
+        ToggleBackground = Color3.fromRGB(30, 22, 42),
+        ToggleEnabled = Color3.fromRGB(124, 58, 214),
+        ToggleDisabled = Color3.fromRGB(104, 92, 132),
+        ToggleEnabledStroke = Color3.fromRGB(160, 96, 255),
+        ToggleDisabledStroke = Color3.fromRGB(132, 118, 160),
+        ToggleEnabledOuterStroke = Color3.fromRGB(112, 78, 146),
+        ToggleDisabledOuterStroke = Color3.fromRGB(70, 56, 92),
+
+        DropdownSelected = Color3.fromRGB(46, 32, 64),
+        DropdownUnselected = Color3.fromRGB(32, 22, 46),
+
+        InputBackground = Color3.fromRGB(32, 22, 46),
+        InputStroke = Color3.fromRGB(82, 60, 110),
+        PlaceholderColor = Color3.fromRGB(190, 174, 214)
+    }
 })
 
 local CorpseMap = {}
@@ -190,7 +231,6 @@ FarmTab:CreateButton({
          return
       end
       
-      -- Build the list string
       local listText = ""
       local chestCount = 0
       
@@ -203,7 +243,6 @@ FarmTab:CreateButton({
          if reward then
             listText = listText .. "• " .. chestName .. ": " .. tostring(reward) .. "\n"
          else
-            -- Try to find Reward in descendants
             local foundReward = false
             for _, desc in pairs(model:GetDescendants()) do
                local descReward = desc:GetAttribute("Reward")
