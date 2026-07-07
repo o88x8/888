@@ -8,8 +8,8 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Create Window with custom theme, name, and creator
 local Window = Rayfield:CreateWindow({
-    Name = "888 Hub",
-    LoadingTitle = "888 Hub",
+    Name = "888-Hub",
+    LoadingTitle = "888-Hub",
     LoadingSubtitle = "by Sardo",
     ConfigurationSaving = {
         Enabled = true,
@@ -20,45 +20,37 @@ local Window = Rayfield:CreateWindow({
     DisableKeyBindings = false,
     ToggleKey = Enum.KeyCode.K,
     Theme = {
-	    TextColor = Color3.fromRGB(240, 240, 240),
-
-	    Background = Color3.fromRGB(18, 14, 24),
-	    Topbar = Color3.fromRGB(26, 18, 38),
-	    Shadow = Color3.fromRGB(12, 8, 18),
-
-	    NotificationBackground = Color3.fromRGB(14, 10, 20),
-	    NotificationActionsBackground = Color3.fromRGB(220, 206, 245),
-
-	    TabBackground = Color3.fromRGB(52, 36, 72),
-	    TabStroke = Color3.fromRGB(66, 46, 92),
-	    TabBackgroundSelected = Color3.fromRGB(198, 176, 232),
-	    TabTextColor = Color3.fromRGB(240, 240, 240),
-	    SelectedTabTextColor = Color3.fromRGB(40, 22, 58),
-
-	    ElementBackground = Color3.fromRGB(28, 20, 40),
-	    ElementBackgroundHover = Color3.fromRGB(34, 24, 48),
-	    SecondaryElementBackground = Color3.fromRGB(20, 14, 30),
-	    ElementStroke = Color3.fromRGB(56, 40, 78),
-	    SecondaryElementStroke = Color3.fromRGB(44, 30, 62),
-
-	    SliderBackground = Color3.fromRGB(98, 58, 160),
-	    SliderProgress = Color3.fromRGB(144, 84, 228),
-	    SliderStroke = Color3.fromRGB(170, 112, 255),
-
-	    ToggleBackground = Color3.fromRGB(22, 16, 32),
-	    ToggleEnabled = Color3.fromRGB(102, 52, 184),
-	    ToggleDisabled = Color3.fromRGB(82, 72, 106),
-	    ToggleEnabledStroke = Color3.fromRGB(144, 88, 238),
-	    ToggleDisabledStroke = Color3.fromRGB(104, 92, 130),
-	    ToggleEnabledOuterStroke = Color3.fromRGB(86, 60, 118),
-	    ToggleDisabledOuterStroke = Color3.fromRGB(54, 40, 74),
-
-	    DropdownSelected = Color3.fromRGB(30, 22, 44),
-	    DropdownUnselected = Color3.fromRGB(22, 16, 34),
-
-	    InputBackground = Color3.fromRGB(22, 16, 34),
-	    InputStroke = Color3.fromRGB(68, 48, 94),
-	    PlaceholderColor = Color3.fromRGB(176, 162, 198)
+        TextColor = Color3.fromRGB(240, 240, 240),
+        Background = Color3.fromRGB(24, 18, 32),
+        Topbar = Color3.fromRGB(35, 24, 48),
+        Shadow = Color3.fromRGB(18, 12, 28),
+        NotificationBackground = Color3.fromRGB(18, 12, 28),
+        NotificationActionsBackground = Color3.fromRGB(232, 220, 255),
+        TabBackground = Color3.fromRGB(74, 54, 98),
+        TabStroke = Color3.fromRGB(88, 66, 114),
+        TabBackgroundSelected = Color3.fromRGB(214, 194, 255),
+        TabTextColor = Color3.fromRGB(240, 240, 240),
+        SelectedTabTextColor = Color3.fromRGB(52, 30, 74),
+        ElementBackground = Color3.fromRGB(40, 28, 54),
+        ElementBackgroundHover = Color3.fromRGB(48, 34, 66),
+        SecondaryElementBackground = Color3.fromRGB(28, 20, 40),
+        ElementStroke = Color3.fromRGB(72, 54, 96),
+        SecondaryElementStroke = Color3.fromRGB(58, 42, 78),
+        SliderBackground = Color3.fromRGB(132, 74, 214),
+        SliderProgress = Color3.fromRGB(168, 98, 255),
+        SliderStroke = Color3.fromRGB(188, 128, 255),
+        ToggleBackground = Color3.fromRGB(30, 22, 42),
+        ToggleEnabled = Color3.fromRGB(124, 58, 214),
+        ToggleDisabled = Color3.fromRGB(104, 92, 132),
+        ToggleEnabledStroke = Color3.fromRGB(160, 96, 255),
+        ToggleDisabledStroke = Color3.fromRGB(132, 118, 160),
+        ToggleEnabledOuterStroke = Color3.fromRGB(112, 78, 146),
+        ToggleDisabledOuterStroke = Color3.fromRGB(70, 56, 92),
+        DropdownSelected = Color3.fromRGB(46, 32, 64),
+        DropdownUnselected = Color3.fromRGB(32, 22, 46),
+        InputBackground = Color3.fromRGB(32, 22, 46),
+        InputStroke = Color3.fromRGB(82, 60, 110),
+        PlaceholderColor = Color3.fromRGB(190, 174, 214)
     }
 })
 
@@ -142,11 +134,11 @@ local RefreshButton = SBRTab:CreateButton({
          end
       end
 
-      -- Safety check to prevent crashing if empty
+      -- FIX: Changed 'true' to 'false' to match MultipleOptions = false
       if #DisplayNames > 0 then
-         CorpseDropdown:Refresh(DisplayNames, true)
+         CorpseDropdown:Refresh(DisplayNames, false)
       else
-         CorpseDropdown:Refresh({}, true)
+         CorpseDropdown:Refresh({}, false)
       end
       
       Rayfield:Notify({Title = "Updated", Content = "Found " .. #DisplayNames .. " corpses!", Duration = 3})
@@ -205,34 +197,19 @@ local AutoFarmChestsToggle = FarmTab:CreateToggle({
    end,
 })
 
--- Separator Label
 FarmTab:CreateLabel("─────────────────────")
 
--- Function to properly update the paragraph (since Rayfield doesn't have a :Set() method)
-local ChestListParagraph = nil
+-- FIX: We use a static Label instead of trying to destroy/recreate Paragraphs
+FarmTab:CreateLabel("Chest rewards print to F9 Console")
 
-local function UpdateChestList(title, content)
-    if ChestListParagraph then
-        ChestListParagraph:Destroy() -- Remove old paragraph
-    end
-    -- Create new paragraph with updated text
-    ChestListParagraph = FarmTab:CreateParagraph({
-        Title = title,
-        Content = content
-    })
-end
-
--- Create initial paragraph
-UpdateChestList("Chest Rewards", "Click 'Refresh' below to load chest rewards...")
-
--- Refresh Chest Rewards Button
 FarmTab:CreateButton({
-   Name = "🔄 Refresh Chest Rewards",
+   Name = "🔄 Print Chest Rewards (F9)",
    Callback = function()
       local SpawnedChests = workspace:FindFirstChild("Chests") and workspace.Chests:FindFirstChild("SpawnedChests")
       
       if not SpawnedChests then
-         UpdateChestList("Chest Rewards", "❌ SpawnedChests folder not found!")
+         print("❌ SpawnedChests folder not found!")
+         Rayfield:Notify({Title = "Error", Content = "Check F9, folder not found!", Duration = 3})
          return
       end
       
@@ -244,88 +221,41 @@ FarmTab:CreateButton({
       end
       
       if #chests == 0 then
-         UpdateChestList("Chest Rewards", "No chests currently spawned.")
+         print("No chests currently spawned.")
+         Rayfield:Notify({Title = "Empty", Content = "No chests spawned right now.", Duration = 3})
          return
       end
       
-      local listText = ""
+      print("=== CHEST REWARDS ===")
       local chestCount = 0
       
       for _, model in pairs(chests) do
          local reward = model:GetAttribute("Reward")
          local chestName = model.Name
-         
          chestCount = chestCount + 1
          
          if reward then
-            listText = listText .. "• " .. chestName .. ": " .. tostring(reward) .. "\n"
+            print("• " .. chestName .. " -> " .. tostring(reward))
          else
             local foundReward = false
             for _, desc in pairs(model:GetDescendants()) do
                local descReward = desc:GetAttribute("Reward")
                if descReward then
-                  listText = listText .. "• " .. chestName .. ": " .. tostring(descReward) .. "\n"
+                  print("• " .. chestName .. " -> " .. tostring(descReward))
                   foundReward = true
                   break
                end
             end
             if not foundReward then
-               listText = listText .. "• " .. chestName .. ": [No Reward Found]\n"
+               print("• " .. chestName .. " -> [No Reward Found]")
             end
          end
       end
       
-      UpdateChestList("Chest Rewards (" .. chestCount .. ")", listText)
-      Rayfield:Notify({Title = "Updated", Content = "Found " .. chestCount .. " chests!", Duration = 3})
+      print("====================")
+      Rayfield:Notify({Title = "Updated", Content = "Printed " .. chestCount .. " chests to F9!", Duration = 3})
    end,
 })
-
--- Auto-refresh chest list every 10 seconds
-task.spawn(function()
-   while task.wait(10) do
-      local SpawnedChests = workspace:FindFirstChild("Chests") and workspace.Chests:FindFirstChild("SpawnedChests")
-      
-      if not SpawnedChests then continue end
-      
-      local chests = {}
-      for _, child in pairs(SpawnedChests:GetChildren()) do
-         if child:IsA("Model") then
-            table.insert(chests, child)
-         end
-      end
-      
-      if #chests == 0 then continue end
-      
-      local listText = ""
-      local chestCount = 0
-      
-      for _, model in pairs(chests) do
-         local reward = model:GetAttribute("Reward")
-         local chestName = model.Name
-         
-         chestCount = chestCount + 1
-         
-         if reward then
-            listText = listText .. "• " .. chestName .. ": " .. tostring(reward) .. "\n"
-         else
-            local foundReward = false
-            for _, desc in pairs(model:GetDescendants()) do
-               local descReward = desc:GetAttribute("Reward")
-               if descReward then
-                  listText = listText .. "• " .. chestName .. ": " .. tostring(descReward) .. "\n"
-                  foundReward = true
-                  break
-               end
-            end
-            if not foundReward then
-               listText = listText .. "• " .. chestName .. ": [No Reward]\n"
-            end
-         end
-      end
-      
-      UpdateChestList("Chest Rewards (" .. chestCount .. ")", listText)
-   end
-end)
 
 task.spawn(function()
    while task.wait(0.1) do
