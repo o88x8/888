@@ -141,7 +141,7 @@ local TweenButton = SBRTab:CreateButton({
 })
 
 -- =========================================================
--- FARM TAB CONTENT (CHESTS) - 3 STUD OFFSET + ANTI-KNOCKBACK
+-- FARM TAB CONTENT (CHESTS)
 -- =========================================================
 
 local AutoFarmChestsToggle = FarmTab:CreateToggle({
@@ -158,6 +158,119 @@ local AutoFarmChestsToggle = FarmTab:CreateToggle({
    end,
 })
 
+-- Separator Label
+FarmTab:CreateLabel("─────────────────────")
+
+-- Chest Rewards List (Paragraph)
+local ChestListParagraph = FarmTab:CreateParagraph({
+   Title = "Chest Rewards",
+   Content = "Click 'Refresh' below to load chest rewards...",
+})
+
+-- Refresh Chest Rewards Button
+FarmTab:CreateButton({
+   Name = "🔄 Refresh Chest Rewards",
+   Callback = function()
+      local SpawnedChests = workspace:FindFirstChild("Chests") and workspace.Chests:FindFirstChild("SpawnedChests")
+      
+      if not SpawnedChests then
+         ChestListParagraph:Set("Chest Rewards", "❌ SpawnedChests folder not found!")
+         return
+      end
+      
+      local chests = {}
+      for _, child in pairs(SpawnedChests:GetChildren()) do
+         if child:IsA("Model") then
+            table.insert(chests, child)
+         end
+      end
+      
+      if #chests == 0 then
+         ChestListParagraph:Set("Chest Rewards", "No chests currently spawned.")
+         return
+      end
+      
+      -- Build the list string
+      local listText = ""
+      local chestCount = 0
+      
+      for _, model in pairs(chests) do
+         local reward = model:GetAttribute("Reward")
+         local chestName = model.Name
+         
+         chestCount = chestCount + 1
+         
+         if reward then
+            listText = listText .. "• " .. chestName .. ": " .. tostring(reward) .. "\n"
+         else
+            -- Try to find Reward in descendants
+            local foundReward = false
+            for _, desc in pairs(model:GetDescendants()) do
+               local descReward = desc:GetAttribute("Reward")
+               if descReward then
+                  listText = listText .. "• " .. chestName .. ": " .. tostring(descReward) .. "\n"
+                  foundReward = true
+                  break
+               end
+            end
+            if not foundReward then
+               listText = listText .. "• " .. chestName .. ": [No Reward Found]\n"
+            end
+         end
+      end
+      
+      ChestListParagraph:Set("Chest Rewards (" .. chestCount .. ")", listText)
+      Rayfield:Notify({Title = "Updated", Content = "Found " .. chestCount .. " chests!", Duration = 3})
+   end,
+})
+
+-- Auto-refresh chest list every 10 seconds
+task.spawn(function()
+   while task.wait(10) do
+      local SpawnedChests = workspace:FindFirstChild("Chests") and workspace.Chests:FindFirstChild("SpawnedChests")
+      
+      if not SpawnedChests then continue end
+      
+      local chests = {}
+      for _, child in pairs(SpawnedChests:GetChildren()) do
+         if child:IsA("Model") then
+            table.insert(chests, child)
+         end
+      end
+      
+      if #chests == 0 then continue end
+      
+      local listText = ""
+      local chestCount = 0
+      
+      for _, model in pairs(chests) do
+         local reward = model:GetAttribute("Reward")
+         local chestName = model.Name
+         
+         chestCount = chestCount + 1
+         
+         if reward then
+            listText = listText .. "• " .. chestName .. ": " .. tostring(reward) .. "\n"
+         else
+            local foundReward = false
+            for _, desc in pairs(model:GetDescendants()) do
+               local descReward = desc:GetAttribute("Reward")
+               if descReward then
+                  listText = listText .. "• " .. chestName .. ": " .. tostring(descReward) .. "\n"
+                  foundReward = true
+                  break
+               end
+            end
+            if not foundReward then
+               listText = listText .. "• " .. chestName .. ": [No Reward]\n"
+            end
+         end
+      end
+      
+      ChestListParagraph:Set("Chest Rewards (" .. chestCount .. ")", listText)
+   end
+end)
+
 task.spawn(function()
    while task.wait(0.1) do
       if not _G.AutoFarmChests then continue end
@@ -170,7 +283,6 @@ task.spawn(function()
       
       if not SpawnedChests then continue end
       
-      -- Collect all chest models
       local chests = {}
       for _, child in pairs(SpawnedChests:GetChildren()) do
          if child:IsA("Model") then
@@ -188,16 +300,12 @@ task.spawn(function()
                          or model:FindFirstChildWhichIsA("MeshPart")
             
             if targetPart then
-               -- Calculate safe teleport position (3 studs above the chest)
                local safeCFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
                
-               -- Initial Teleport
                RootPart.AssemblyLinearVelocity = Vector3.zero
                RootPart.AssemblyAngularVelocity = Vector3.zero
                RootPart.CFrame = safeCFrame
                
-               -- ANTI-KNOCKBACK LOOP
-               -- We set maxDistance to 10 because the 3-stud offset counts as distance
                local maxDistance = 10 
                local safetyTimer = 0
                
@@ -212,26 +320,21 @@ task.spawn(function()
                   end
                end
                
-               -- Final settle time for the server
                task.wait(0.25)
                
-               -- Find and fire the prompt
                local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true)
                if prompt then
-                  -- Clear velocity one last time right before firing
                   RootPart.AssemblyLinearVelocity = Vector3.zero
                   RootPart.CFrame = safeCFrame
                   task.wait(0.05)
                   
                   fireproximityprompt(prompt)
                   
-                  -- Backup E key press
                   VirtualInputManager:SendKeyEvent(true, "E", false, game)
                   task.wait(0.2)
                   VirtualInputManager:SendKeyEvent(false, "E", false, game)
                end
                
-               -- Wait a tiny bit for collection to process
                task.wait(0.15)
             end
          end
