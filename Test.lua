@@ -1,29 +1,24 @@
--- 1. Load the Rayfield Library
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
--- Safely load VirtualInputManager (some executors might block this)
-local VIM_SUCCESS, VirtualInputManager = pcall(function()
-    return game:GetService("VirtualInputManager")
-end)
+-- Load Rayfield Library
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- 2. Create the Rayfield Window
+-- Create Window with K as toggle key
 local Window = Rayfield:CreateWindow({
-   Name = "Game Hub",
-   LoadingTitle = "Loading Hub...",
-   LoadingSubtitle = "by AI",
-   ConfigurationSaving = {
-      Enabled = false,
-      FolderName = nil,
-      FileName = "GameHub"
-   },
-   Discord = {
-      Enabled = false,
-   },
-   KeySystem = false,
+    Name = "SBR Hub",
+    LoadingTitle = "SBR Hub",
+    LoadingSubtitle = "Loading...",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "SBRHub",
+        FileName = "Config"
+    },
+    KeySystem = false,
+    DisableKeyBindings = false,
+    ToggleKey = Enum.KeyCode.K,
 })
 
 -- Table to link our Dropdown display name to the actual part in the game
@@ -47,7 +42,7 @@ local SpeedSlider = SBRTab:CreateSlider({
    Flag = "TweenSpeed",
 })
 
--- 2. Dropdown
+-- 2. Dropdown (Now will show the Stage!)
 local SelectedCorpseDisplayName = nil
 
 local CorpseDropdown = SBRTab:CreateDropdown({
@@ -61,7 +56,7 @@ local CorpseDropdown = SBRTab:CreateDropdown({
    end,
 })
 
--- 3. Button to Refresh the List
+-- 3. Button to Refresh the List (Reads Attributes!)
 local RefreshButton = SBRTab:CreateButton({
    Name = "Refresh Corpse List",
    Callback = function()
@@ -200,28 +195,16 @@ task.spawn(function()
                               -- Instant TP to the WoodTop position
                               RootPart.CFrame = woodTop.CFrame
                               
-                              -- Safely look for and fire a ProximityPrompt if the game uses it
-                              pcall(function()
-                                 local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true) or woodTop:FindFirstChildWhichIsA("ProximityPrompt", true)
-                                 if prompt then
-                                    fireproximityprompt(prompt)
-                                 end
-                              end)
+                              -- Look for a ProximityPrompt to fire (fallback if game uses it)
+                              local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true) or woodTop:FindFirstChildWhichIsA("ProximityPrompt", true)
+                              if prompt then
+                                 fireproximityprompt(prompt)
+                              end
                               
-                              -- Safely simulate holding 'E' for 1 second
-                              pcall(function()
-                                 if VIM_SUCCESS and VirtualInputManager then
-                                    VirtualInputManager:SendKeyEvent(true, "E", false, game)
-                                 end
-                              end)
-                              
-                              task.wait(1) -- Hold E for 1 second
-                              
-                              pcall(function()
-                                 if VIM_SUCCESS and VirtualInputManager then
-                                    VirtualInputManager:SendKeyEvent(false, "E", false, game)
-                                 end
-                              end)
+                              -- Simulate holding 'E' for 1 second
+                              VirtualInputManager:SendKeyEvent(true, "E", false, game)
+                              task.wait(1)
+                              VirtualInputManager:SendKeyEvent(false, "E", false, game)
                               
                               -- Wait a tiny bit before teleporting to the next chest
                               task.wait(0.2)
@@ -232,11 +215,9 @@ task.spawn(function()
                end
             end
          end
-         task.wait(0.5) -- Short delay before re-scanning the folder
+         task.wait(0.5) -- Short delay before re-scanning the folder for new chests
       else
          task.wait(0.5)
       end
    end
 end)
-
-Rayfield:LoadConfiguration()
