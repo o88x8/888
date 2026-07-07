@@ -32,7 +32,6 @@ local FarmTab = Window:CreateTab("Farm", 4483362458)
 -- SBR TAB CONTENT
 -- =========================================================
 
--- 1. Speed Slider
 local SpeedSlider = SBRTab:CreateSlider({
    Name = "Tween Speed",
    Range = {50, 500},
@@ -42,7 +41,6 @@ local SpeedSlider = SBRTab:CreateSlider({
    Flag = "TweenSpeed",
 })
 
--- 2. Dropdown (Now will show the Stage!)
 local SelectedCorpseDisplayName = nil
 
 local CorpseDropdown = SBRTab:CreateDropdown({
@@ -56,7 +54,6 @@ local CorpseDropdown = SBRTab:CreateDropdown({
    end,
 })
 
--- 3. Button to Refresh the List (Reads Attributes!)
 local RefreshButton = SBRTab:CreateButton({
    Name = "Refresh Corpse List",
    Callback = function()
@@ -68,7 +65,7 @@ local RefreshButton = SBRTab:CreateButton({
       end
 
       local DisplayNames = {}
-      CorpseMap = {} -- Reset the map
+      CorpseMap = {}
 
       for _, Child in pairs(CorpseFolder:GetChildren()) do
          local targetPart = nil
@@ -111,7 +108,6 @@ local RefreshButton = SBRTab:CreateButton({
    end,
 })
 
--- 4. The Tween Button
 local TweenButton = SBRTab:CreateButton({
    Name = "Tween to Selected Corpse",
    Callback = function()
@@ -147,7 +143,7 @@ local TweenButton = SBRTab:CreateButton({
 })
 
 -- =========================================================
--- FARM TAB CONTENT (CHESTS)
+-- FARM TAB CONTENT (CHESTS) - FIXED PATH
 -- =========================================================
 
 local AutoFarmChestsToggle = FarmTab:CreateToggle({
@@ -164,7 +160,6 @@ local AutoFarmChestsToggle = FarmTab:CreateToggle({
    end,
 })
 
--- Background loop for Chest Farming
 task.spawn(function()
    while true do
       if _G.AutoFarmChests then
@@ -173,49 +168,50 @@ task.spawn(function()
             local RootPart = Character.HumanoidRootPart
             local SpawnedChests = workspace:FindFirstChild("Chests") and workspace.Chests:FindFirstChild("SpawnedChests")
             
-            if SpawnedChests then
-               -- Loop through all folders inside SpawnedChests
-               for _, folder in pairs(SpawnedChests:GetChildren()) do
-                  if not _G.AutoFarmChests then break end -- Stop immediately if toggled off
+            if not SpawnedChests then
+               Rayfield:Notify({Title = "Error", Content = "SpawnedChests not found!", Duration = 3})
+               _G.AutoFarmChests = false
+               task.wait(1)
+            else
+               -- Models are DIRECTLY inside SpawnedChests
+               for _, model in pairs(SpawnedChests:GetChildren()) do
+                  if not _G.AutoFarmChests then break end
                   
-                  if folder:IsA("Folder") then
-                     -- Loop through all models inside the folder
-                     for _, model in pairs(folder:GetChildren()) do
-                        if not _G.AutoFarmChests then break end
+                  if model:IsA("Model") then
+                     -- Find WoodTop
+                     local targetPart = model:FindFirstChild("WoodTop", true)
+                     
+                     -- Fallback to PrimaryPart or any BasePart/MeshPart
+                     if not targetPart then
+                        targetPart = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart") or model:FindFirstChildWhichIsA("MeshPart")
+                     end
+                     
+                     if targetPart then
+                        -- Stop momentum
+                        RootPart.AssemblyLinearVelocity = Vector3.zero
+                        RootPart.AssemblyAngularVelocity = Vector3.zero
                         
-                        if model:IsA("Model") then
-                           -- Find the WoodTop MeshPart
-                           local woodTop = model:FindFirstChild("WoodTop", true)
-                           
-                           if woodTop and woodTop:IsA("MeshPart") then
-                              -- Stop momentum so we don't get flung
-                              RootPart.AssemblyLinearVelocity = Vector3.zero
-                              RootPart.AssemblyAngularVelocity = Vector3.zero
-                              
-                              -- Instant TP to the WoodTop position
-                              RootPart.CFrame = woodTop.CFrame
-                              
-                              -- Look for a ProximityPrompt to fire (fallback if game uses it)
-                              local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true) or woodTop:FindFirstChildWhichIsA("ProximityPrompt", true)
-                              if prompt then
-                                 fireproximityprompt(prompt)
-                              end
-                              
-                              -- Simulate holding 'E' for 1 second
-                              VirtualInputManager:SendKeyEvent(true, "E", false, game)
-                              task.wait(1)
-                              VirtualInputManager:SendKeyEvent(false, "E", false, game)
-                              
-                              -- Wait a tiny bit before teleporting to the next chest
-                              task.wait(0.2)
-                           end
+                        -- Teleport to chest
+                        RootPart.CFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
+                        
+                        -- Fire ProximityPrompt if exists
+                        local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true)
+                        if prompt then
+                           fireproximityprompt(prompt)
                         end
+                        
+                        -- Hold E for 1 second
+                        VirtualInputManager:SendKeyEvent(true, "E", false, game)
+                        task.wait(1)
+                        VirtualInputManager:SendKeyEvent(false, "E", false, game)
+                        
+                        task.wait(0.3)
                      end
                   end
                end
             end
          end
-         task.wait(0.5) -- Short delay before re-scanning the folder for new chests
+         task.wait(0.5)
       else
          task.wait(0.5)
       end
