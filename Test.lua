@@ -322,10 +322,10 @@ local function CreateGUI()
     local FlyBtn = CreateToggle(cont4)
 
     local c5, cont5 = CreateCard(Pages[3].Page, "Loop Teleport", 2)
-    cont5.Size = UDim2.new(0, 0, 0, 135) -- Perfectly fitted compact height
+    -- Intentionally left out cont5.Size so it automatically fits the width properly with margins
     
     local PlayerScrollFrame = Instance.new("ScrollingFrame")
-    PlayerScrollFrame.Size = UDim2.new(1, 0, 0, 80) -- Reduced height
+    PlayerScrollFrame.Size = UDim2.new(1, 0, 0, 80)
     PlayerScrollFrame.Position = UDim2.new(0, 0, 0, 0) 
     PlayerScrollFrame.BackgroundTransparency = 1
     PlayerScrollFrame.BorderSizePixel = 0
@@ -339,7 +339,6 @@ local function CreateGUI()
     ListLayout.Padding = UDim.new(0, 2)
     ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
-    -- Tight, safe positioning for button and text
     local TPToggleBtn = CreateToggle(cont5)
     TPToggleBtn.Position = UDim2.new(1, -100, 0, 90)
     TPToggleBtn.Size = UDim2.new(0, 100, 0, 24)
