@@ -480,7 +480,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- ===== CLEAN FLY LOGIC =====
+-- ===== RAW WORKING FLY LOGIC =====
 local function StartFly()
     local char = Players.LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -488,10 +488,7 @@ local function StartFly()
     
     if not hum or not hrp then return end
     
-    -- Freeze character and disable animations
-    hum.PlatformStand = true
-    local animator = hum:FindFirstChildOfClass("Animator")
-    if animator then animator.Enabled = false end
+    hum.PlatformStand = true 
     
     FlyConnection = RunService.Heartbeat:Connect(function()
         if not FlyEnabled or not char or not char.Parent then
@@ -527,9 +524,6 @@ local function StopFly()
     
     if hum then
         hum.PlatformStand = false
-        -- Re-enable animations
-        local animator = hum:FindFirstChildOfClass("Animator")
-        if animator then animator.Enabled = true end
     end
     if hrp then
         hrp.AssemblyLinearVelocity = Vector3.zero
