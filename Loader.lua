@@ -5,7 +5,7 @@ local player = Players.LocalPlayer
 -- 1. HIER DEINE KEYS EINTRAGEN
 -- ==========================================
 local validKeys = {
-    "NOOBEZ-123",
+    "123TEST",
     "TEST-KEY-456",
     "DEIN-GEHEIMER-KEY"
 }
@@ -85,40 +85,28 @@ btn.MouseButton1Click:Connect(function()
     status.TextColor3 = Color3.fromRGB(255, 255, 100)
     btn.Enabled = false
     
-    -- Kleine künstliche Verzögerung (damit es nicht "sofort" passiert und etwas authentischer wirkt)
+    -- Kleine Verzögerung
     task.wait(1)
     
     local keyIsValid = false
     
-    -- Schauen ob der eingetippte Key in unserer Tabelle existiert
+    -- Schauen ob der Key in der Liste steht
     for _, validKey in ipairs(validKeys) do
-        -- Groß-/Kleinschreibung ignorieren (optional, lösche string.lower wenn du exakte Schreibweise willst)
         if string.lower(inputKey) == string.lower(validKey) then
             keyIsValid = true
-            break -- Abbrechen, sobald wir einen Treffer haben
+            break
         end
     end
     
     if keyIsValid then
-        status.Text = "✅ Erfolg! Lade Skript..."
+        -- === TEST-MODUS: GUI bleibt offen, damit du es siehst ===
+        status.Text = "✅ Erfolg! Key ist richtig."
         status.TextColor3 = Color3.fromRGB(80, 255, 80)
-        task.wait(0.5)
+        btn.Text = "Erfolg!"
+        btn.BackgroundColor3 = Color3.fromRGB(80, 255, 80)
         
-        -- GUI ausblenden
-        screenGui:Destroy()
-        
-        -- ==========================================
-        -- 2. HIER DEIN LOADSTRING EINFÜGEN
-        -- ==========================================
-        local success, errorMsg = pcall(function()
-            -- Ersetze die URL mit deiner echten Pastebin/Raw GitHub URL
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/o88x8/888/refs/heads/888-Hub/Test.lua"))()
-        end)
-        
-        if not success then
-            warn("Fehler beim Laden des Skripts: " .. tostring(errorMsg))
-        end
-        -- ==========================================
+        -- HIER KOMMT SPÄTER DAS LOADSTRING HIN, 
+        -- aber wir lassen es erst mal weg zum Testen!
         
     else
         status.Text = "❌ Falscher Key!"
