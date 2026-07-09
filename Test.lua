@@ -481,7 +481,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- ===== FLY LOGIC =====
+-- ===== NOCLIP LOGIC =====
 local function StartNoclip()
     if NoclipConnection then return end
     NoclipConnection = RunService.Stepped:Connect(function()
@@ -514,6 +514,7 @@ local function StopNoclip()
     end)
 end
 
+-- ===== FLY LOGIC (REVERTED TO VELOCITY + NOCLIP + NO ANIMATIONS) =====
 local function StartFly()
     local char = Players.LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -526,43 +527,30 @@ local function StartFly()
     local animator = hum:FindFirstChildOfClass("Animator")
     if animator then animator.Enabled = false end
     
+    -- Enable Noclip so you don't get stuck on parts
     StartNoclip()
     
-    FlyConnection = RunService.Heartbeat:Connect(function(dt)
+    FlyConnection = RunService.Heartbeat:Connect(function()
         -- Safety checks
-        if not FlyEnabled or not char or not char.Parent or not hrp or not hrp.Parent then
+        if not FlyEnabled or not char or not char.Parent then
             StopFly()
             return
         end
 
-        -- CRITICAL: Zero out physics velocity so gravity doesn't pull you down
-        hrp.AssemblyLinearVelocity = Vector3.zero
-        hrp.AssemblyAngularVelocity = Vector3.zero
-
         local cam = workspace.CurrentCamera
-        
-        -- Strictly horizontal camera directions
-        local forward = cam.CFrame.LookVector * Vector3.new(1, 0, 1)
-        -- Prevent NaN crash if looking perfectly straight up/down
-        if forward.Magnitude > 0 then forward = forward.Unit else forward = Vector3.new(0, 0, -1) end
-        
-        local right = cam.CFrame.RightVector * Vector3.new(1, 0, 1)
-        if right.Magnitude > 0 then right = right.Unit else right = Vector3.new(1, 0, 0) end
-        
         local moveDir = Vector3.zero
 
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + forward end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - forward end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - right end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + right end
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
 
-        -- Normalize movement so diagonal isn't faster
         if moveDir.Magnitude > 0 then
             moveDir = moveDir.Unit
         end
 
-        -- Apply CFrame movement
-        hrp.CFrame = hrp.CFrame + (moveDir * FlySpeed * dt)
+        -- Apply the velocity (Old working method)
+        hrp.AssemblyLinearVelocity = moveDir * FlySpeed
     end)
 end
 
