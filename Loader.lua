@@ -3,7 +3,7 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
 -- === DEINE PANDA AUTH URL HIER EINTRAGEN ===
-local API_URL = "HIER_DEINE_PANDA_AUTH_API_URL_EINTRAGEN" 
+local API_URL = "7eb8a260-2247-4fad-95c1-eb306d2b5c6e" 
 -- ============================================
 
 -- === GUI ERSTELLEN ===
