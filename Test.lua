@@ -145,7 +145,7 @@ local function CreateGUI()
 
     local Pages = {}
     local TabNames = {"Home", "Combat", "Move", "Visuals"}
-    local TabIcons = {"◎", "⚔", "✈", "◎"} -- Simple unicode icons
+    local TabIcons = {"◎", "⚔", "✈", "◎"}
 
     for i, name in ipairs(TabNames) do
         local Tab = Instance.new("TextButton")
@@ -219,7 +219,7 @@ local function CreateGUI()
     -- Helper to create cards
     local function CreateCard(parent, title, order)
         local Card = Instance.new("Frame")
-        Card.Size = UDim2.new(1, 0, 0, 80) -- Base height, UIList will stretch if needed
+        Card.Size = UDim2.new(1, 0, 0, 80)
         Card.BackgroundColor3 = theme.card
         Card.BorderSizePixel = 0
         Card.LayoutOrder = order
@@ -306,7 +306,7 @@ local function CreateGUI()
     local KbText = Instance.new("TextLabel")
     KbText.Size = UDim2.new(1, 0, 1, 0)
     KbText.BackgroundTransparency = 1
-    KbText.Text = "[U] Fast Attack\n[G] Fly + Noclip\n[Ctrl+T] Toggle Hub"
+    KbText.Text = "[U] Fast Attack\n[G] Fly + Noclip\n[K] Toggle Hub"
     KbText.TextColor3 = theme.textMuted
     KbText.Font = Enum.Font.Gotham
     KbText.TextSize = 11
@@ -447,7 +447,7 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 refreshPlayerList()
 
--- Toggle UI Helper
+-- Toggle UI Style Helper
 local function ToggleButtonStyle(Btn, state)
     Btn:SetAttribute("On", state)
     if state then
@@ -463,9 +463,9 @@ local function ToggleButtonStyle(Btn, state)
     end
 end
 
--- === LOGIC ===
+-- === STANDALONE LOGIC FUNCTIONS ===
 
--- Fast Attack
+-- Fast Attack Logic
 local function AttackMultipleTargets(targets)
     pcall(function()
         if not targets or #targets == 0 then return end
@@ -500,15 +500,12 @@ local function StartFastAttack()
         end
     end)
 end
-local function StopFastAttack() if FastAttackConnection then task.cancel(FastAttackConnection) FastAttackConnection = nil end end
 
-FastAttackBtn.MouseButton1Click:Connect(function()
-    FastAttackEnabled = not FastAttackEnabled
-    ToggleButtonStyle(FastAttackBtn, FastAttackEnabled)
-    if FastAttackEnabled then StartFastAttack() else StopFastAttack() end
-end)
+local function StopFastAttack() 
+    if FastAttackConnection then task.cancel(FastAttackConnection) FastAttackConnection = nil end 
+end
 
--- Fly
+-- Fly Logic
 local function EnableNoclip(c) originalCanCollide = {} for _, p in pairs(c:GetDescendants()) do if p:IsA("BasePart") then originalCanCollide[p] = p.CanCollide p.CanCollide = false end end end
 local function DisableNoclip(c) for p, v in pairs(originalCanCollide) do if p and p.Parent then p.CanCollide = v end end originalCanCollide = {} end
 local function MaintainNoclip(c) for _, p in pairs(c:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end end
@@ -529,49 +526,16 @@ local function StartFly()
         r.AssemblyLinearVelocity = d * FlySpeed
     end)
 end
+
 local function StopFly()
     if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
     local c = Players.LocalPlayer.Character; local h = c and c:FindFirstChildOfClass("Humanoid"); local r = c and c:FindFirstChild("HumanoidRootPart")
     if h then h.PlatformStand = false end if r then r.AssemblyLinearVelocity = Vector3.zero end if c then DisableNoclip(c) end
 end
 
-FlyBtn.MouseButton1Click:Connect(function()
-    FlyEnabled = not FlyEnabled
-    ToggleButtonStyle(FlyBtn, FlyEnabled)
-    if FlyEnabled then StartFly() else StopFly() end
-end)
-
--- Loop TP
-TPToggleBtn.MouseButton1Click:Connect(function()
-    if not targetPlayer then TPStatus.Text = "Status: Select a player"; return end
-    teleporting = not teleporting
-    if teleporting then
-        TPToggleBtn.Text = "STOP"
-        ToggleButtonStyle(TPToggleBtn, true)
-        TPStatus.Text = "Target: "..targetPlayer.DisplayName
-    else
-        TPToggleBtn.Text = "START"
-        ToggleButtonStyle(TPToggleBtn, false)
-        TPStatus.Text = "Status: Idle"
-    end
-end)
-
-local lastTP = 0
-RunService.Heartbeat:Connect(function()
-    if teleporting and targetPlayer then
-        local n = tick()
-        if n - lastTP >= teleportCooldown then
-            local c, t = Players.LocalPlayer.Character, targetPlayer.Character
-            if c and t then
-                local h1, h2 = c:FindFirstChild("HumanoidRootPart"), t:FindFirstChild("HumanoidRootPart")
-                if h1 and h2 then h1.CFrame = h2.CFrame * CFrame.new(0, 0, 3) lastTP = n end
-            end
-        end
-    end
-end)
-
--- ESP
+-- ESP Logic
 local function ClearESP() for _, o in pairs(ESPObjects) do if o and o.Parent then o.Parent:Destroy() end end ESPObjects = {} end
+
 local function UpdateESP()
     local mc = Players.LocalPlayer.Character; local mhr = mc and mc:FindFirstChild("HumanoidRootPart")
     if not mhr then return end
@@ -598,7 +562,35 @@ local function UpdateESP()
     end
 end
 
-ESPBtn.MouseButton1Click:Connect(function()
+-- === EXPLICIT TOGGLE FUNCTIONS (Buttons & Hotkeys call these) ===
+
+local function ToggleFastAttack()
+    FastAttackEnabled = not FastAttackEnabled
+    ToggleButtonStyle(FastAttackBtn, FastAttackEnabled)
+    if FastAttackEnabled then StartFastAttack() else StopFastAttack() end
+end
+
+local function ToggleFly()
+    FlyEnabled = not FlyEnabled
+    ToggleButtonStyle(FlyBtn, FlyEnabled)
+    if FlyEnabled then StartFly() else StopFly() end
+end
+
+local function ToggleTP()
+    if not targetPlayer then TPStatus.Text = "Status: Select a player"; return end
+    teleporting = not teleporting
+    if teleporting then
+        TPToggleBtn.Text = "STOP"
+        ToggleButtonStyle(TPToggleBtn, true)
+        TPStatus.Text = "Target: "..targetPlayer.DisplayName
+    else
+        TPToggleBtn.Text = "START"
+        ToggleButtonStyle(TPToggleBtn, false)
+        TPStatus.Text = "Status: Idle"
+    end
+end
+
+local function ToggleESP()
     ESPEnabled = not ESPEnabled
     ToggleButtonStyle(ESPBtn, ESPEnabled)
     if ESPEnabled then
@@ -608,14 +600,37 @@ ESPBtn.MouseButton1Click:Connect(function()
         if ESPConnection then ESPConnection:Disconnect() ESPConnection = nil end
         ClearESP()
     end
+end
+
+-- Connect UI Buttons to the explicit functions
+FastAttackBtn.MouseButton1Click:Connect(ToggleFastAttack)
+FlyBtn.MouseButton1Click:Connect(ToggleFly)
+TPToggleBtn.MouseButton1Click:Connect(ToggleTP)
+ESPBtn.MouseButton1Click:Connect(ToggleESP)
+
+-- Loop TP Heartbeat
+local lastTP = 0
+RunService.Heartbeat:Connect(function()
+    if teleporting and targetPlayer then
+        local n = tick()
+        if n - lastTP >= teleportCooldown then
+            local c, t = Players.LocalPlayer.Character, targetPlayer.Character
+            if c and t then
+                local h1, h2 = c:FindFirstChild("HumanoidRootPart"), t:FindFirstChild("HumanoidRootPart")
+                if h1 and h2 then h1.CFrame = h2.CFrame * CFrame.new(0, 0, 3) lastTP = n end
+            end
+        end
+    end
 end)
 
--- Keybinds
+-- === KEYBINDS ===
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
-    if input.KeyCode == TOGGLE_KEY then FastAttackBtn.MouseButton1Click:Fire() end
-    if input.KeyCode == FLY_KEY then FlyBtn.MouseButton1Click:Fire() end
-    if input.KeyCode == Enum.KeyCode.T and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+    if input.KeyCode == TOGGLE_KEY then
+        ToggleFastAttack()
+    elseif input.KeyCode == FLY_KEY then
+        ToggleFly()
+    elseif input.KeyCode == Enum.KeyCode.K then
         local gui = Players.LocalPlayer.PlayerGui:FindFirstChild("NoobezHub")
         if gui then gui.Enabled = not gui.Enabled end
     end
