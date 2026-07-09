@@ -19,9 +19,10 @@ local teleportCooldown = 0.1
 
 -- Fly Settings
 local FlyEnabled = false
-local FlySpeed = 150
+local FlySpeed = 250
 local FLY_KEY = Enum.KeyCode.G
 local FlyConnection = nil
+local originalCanCollide = {}
 
 local function CreateGUI()
     local ScreenGui = Instance.new("ScreenGui")
@@ -177,7 +178,7 @@ local function CreateGUI()
     FlyTitle.Position = UDim2.new(0.05, 0, 0, 355)
     FlyTitle.BackgroundTransparency = 1
     FlyTitle.TextColor3 = Color3.fromRGB(140, 140, 140)
-    FlyTitle.Text = "FLY [G]"
+    FlyTitle.Text = "FLY + NOCLIP [G]"
     FlyTitle.Font = Enum.Font.GothamBold
     FlyTitle.TextSize = 10
     FlyTitle.Parent = Frame
@@ -480,7 +481,35 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- ===== RAW WORKING FLY LOGIC =====
+-- ===== NOCLIP FUNCTION =====
+local function EnableNoclip(char)
+    originalCanCollide = {}
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            originalCanCollide[part] = part.CanCollide
+            part.CanCollide = false
+        end
+    end
+end
+
+local function DisableNoclip(char)
+    for part, canCollide in pairs(originalCanCollide) do
+        if part and part.Parent then
+            part.CanCollide = canCollide
+        end
+    end
+    originalCanCollide = {}
+end
+
+local function MaintainNoclip(char)
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end
+end
+
+-- ===== RAW WORKING FLY + NOCLIP LOGIC =====
 local function StartFly()
     local char = Players.LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -488,13 +517,17 @@ local function StartFly()
     
     if not hum or not hrp then return end
     
-    hum.PlatformStand = true 
+    hum.PlatformStand = true
+    EnableNoclip(char)
     
     FlyConnection = RunService.Heartbeat:Connect(function()
         if not FlyEnabled or not char or not char.Parent then
             StopFly()
             return
         end
+
+        -- Maintain noclip continuously
+        MaintainNoclip(char)
 
         local cam = workspace.CurrentCamera
         local moveDir = Vector3.zero
@@ -503,6 +536,8 @@ local function StartFly()
         if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0, 1, 0) end
 
         if moveDir.Magnitude > 0 then
             moveDir = moveDir.Unit
@@ -528,16 +563,19 @@ local function StopFly()
     if hrp then
         hrp.AssemblyLinearVelocity = Vector3.zero
     end
+    if char then
+        DisableNoclip(char)
+    end
 end
 
 local function ToggleFly()
     FlyEnabled = not FlyEnabled
     if FlyEnabled then
-        FlyBtn.Text = "Fly: ON"
+        FlyBtn.Text = "Fly + Noclip: ON"
         FlyBtn.BackgroundColor3 = Color3.fromRGB(60, 255, 60)
         StartFly()
     else
-        FlyBtn.Text = "Fly: OFF"
+        FlyBtn.Text = "Fly + Noclip: OFF"
         FlyBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
         StopFly()
     end
@@ -564,6 +602,8 @@ print("=================================")
 print("Script Hub Loaded!")
 print("Made by sardo")
 print("U = Toggle Fast Attack")
-print("G = Toggle Fly")
+print("G = Toggle Fly + Noclip")
+print("Space = Fly Up")
+print("Left Shift = Fly Down")
 print("Ctrl+T = Hide/Show GUI")
 print("=================================")
