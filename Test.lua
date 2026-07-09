@@ -580,58 +580,6 @@ end
 
 FlyBtn.MouseButton1Click:Connect(ToggleFly)
 
--- ===== HOLD R TO MOVE MOUSE ONTO NEAREST PLAYER =====
-RunService.Heartbeat:Connect(function()
-    if UserInputService:GetFocusedTextBox() then return end
-
-    if UserInputService:IsKeyDown(Enum.KeyCode.R) then
-        local myChar = Players.LocalPlayer.Character
-        local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
-        if not myHRP then return end
-
-        local nearest = nil
-        local shortestDist = math.huge
-
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= Players.LocalPlayer and player.Character then
-                local humanoid = player.Character:FindFirstChild("Humanoid")
-                local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-                if humanoid and hrp and humanoid.Health > 0 then
-                    local dist = (hrp.Position - myHRP.Position).Magnitude
-                    if dist < shortestDist then
-                        shortestDist = dist
-                        nearest = player
-                    end
-                end
-            end
-        end
-
-        if nearest and nearest.Character then
-            local targetPart = nearest.Character:FindFirstChild("Head") or nearest.Character:FindFirstChild("HumanoidRootPart")
-            if targetPart then
-                local cam = workspace.CurrentCamera
-                local screenPos, onScreen = cam:WorldToScreenPoint(targetPart.Position)
-                local viewportSize = cam.ViewportSize
-                
-                -- If Z > 0, the player is in front of the camera
-                if screenPos.Z > 0 then
-                    -- Clamp coordinates with a 20px margin so the mouse NEVER gets stuck on the screen edges
-                    local clampedX = math.clamp(screenPos.X, 20, viewportSize.X - 20)
-                    local clampedY = math.clamp(screenPos.Y, 20, viewportSize.Y - 20)
-                    
-                    -- Move the actual mouse to the player
-                    UserInputService:SetMouseLocation(clampedX, clampedY)
-                else
-                    -- If the player is BEHIND you, the mouse physically cannot reach them.
-                    -- We smoothly nudge the camera just enough to bring them on screen so the mouse can lock on.
-                    local lookAt = CFrame.new(cam.CFrame.Position, targetPart.Position)
-                    cam.CFrame = cam.CFrame:Lerp(lookAt, 0.15)
-                end
-            end
-        end
-    end
-end)
-
 -- ===== KEYBINDS =====
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
@@ -652,6 +600,5 @@ print("Script Hub Loaded!")
 print("Made by sardo")
 print("U = Toggle Fast Attack")
 print("G = Toggle Fly + Noclip")
-print("Hold R = Snap mouse to nearest")
 print("Ctrl+T = Hide/Show GUI")
 print("=================================")
