@@ -1,128 +1,128 @@
-local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- === DEINE PANDA AUTH URL HIER EINTRAGEN ===
-local API_URL = "7eb8a260-2247-4fad-95c1-eb306d2b5c6e" 
--- ============================================
+-- ==========================================
+-- 1. HIER DEINE KEYS EINTRAGEN
+-- ==========================================
+local validKeys = {
+    "NOOBEZ-123",
+    "TEST-KEY-456",
+    "DEIN-GEHEIMER-KEY"
+}
+-- ==========================================
 
 -- === GUI ERSTELLEN ===
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "PandaAuthGUI"
-screenGui.ResetOnSpawn = false -- Bleibt beim Respawn stehen
+screenGui.Name = "LoginGUI"
+screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 300, 0, 200)
-mainFrame.Position = UDim2.new(0.5, -150, 0.5, -100) -- Zentriert
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.Size = UDim2.new(0, 250, 0, 180)
+mainFrame.Position = UDim2.new(0.5, -125, 0.5, -90)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 mainFrame.Parent = screenGui
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 10)
 
-local uiCorner = Instance.new("UICorner")
-uiCorner.CornerRadius = UDim.new(0, 12)
-uiCorner.Parent = mainFrame
-
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, 0, 0, 40)
-titleLabel.BackgroundTransparency = 1
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.Text = "Panda Auth - Key Check"
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextSize = 18
-titleLabel.Parent = mainFrame
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Text = "Login"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.Parent = mainFrame
 
 local inputBox = Instance.new("TextBox")
-inputBox.Size = UDim2.new(0.8, 0, 0, 40)
+inputBox.Size = UDim2.new(0.8, 0, 0, 35)
 inputBox.Position = UDim2.new(0.1, 0, 0.3, 0)
-inputBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+inputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-inputBox.PlaceholderText = "Key hier eingeben..."
-inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+inputBox.PlaceholderText = "Key eingeben..."
+inputBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 inputBox.Font = Enum.Font.Gotham
 inputBox.TextSize = 14
 inputBox.ClearTextOnFocus = false
 inputBox.Parent = mainFrame
+Instance.new("UICorner", inputBox).CornerRadius = UDim.new(0, 5)
 
-local inputCorner = Instance.new("UICorner")
-inputCorner.CornerRadius = UDim.new(0, 6)
-inputCorner.Parent = inputBox
+local btn = Instance.new("TextButton")
+btn.Size = UDim2.new(0.8, 0, 0, 35)
+btn.Position = UDim2.new(0.1, 0, 0.6, 0)
+btn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+btn.Text = "Entsperren"
+btn.Font = Enum.Font.GothamBold
+btn.TextSize = 14
+btn.Parent = mainFrame
+Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
 
-local checkButton = Instance.new("TextButton")
-checkButton.Size = UDim2.new(0.8, 0, 0, 40)
-checkButton.Position = UDim2.new(0.1, 0, 0.6, 0)
-checkButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-checkButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-checkButton.Text = "Key Prüfen"
-checkButton.Font = Enum.Font.GothamBold
-checkButton.TextSize = 16
-checkButton.Parent = mainFrame
-
-local btnCorner = Instance.new("UICorner")
-btnCorner.CornerRadius = UDim.new(0, 6)
-btnCorner.Parent = checkButton
-
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Size = UDim2.new(0.9, 0, 0, 30)
-statusLabel.Position = UDim2.new(0.05, 0, 0.85, 0)
-statusLabel.BackgroundTransparency = 1
-statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-statusLabel.Text = "Warte auf Eingabe..."
-statusLabel.Font = Enum.Font.Gotham
-statusLabel.TextSize = 12
-statusLabel.TextWrapped = true
-statusLabel.Parent = mainFrame
--- === GUI ERSTELLUNG ENDE ===
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(0.9, 0, 0, 30)
+status.Position = UDim2.new(0.05, 0, 0.85, 0)
+status.BackgroundTransparency = 1
+status.TextColor3 = Color3.fromRGB(200, 200, 200)
+status.Text = ""
+status.Font = Enum.Font.Gotham
+status.TextSize = 12
+status.TextWrapped = true
+status.Parent = mainFrame
+-- === GUI ENDE ===
 
 
--- === LOGIK ZUM PRÜFEN ===
-checkButton.MouseButton1Click:Connect(function()
+-- === LOGIK ===
+btn.MouseButton1Click:Connect(function()
     local inputKey = inputBox.Text
-
-    -- Prüfen ob das Feld leer ist
-    if inputKey == "" or inputKey == "Key hier eingeben..." then
-        statusLabel.Text = "Bitte gib zuerst einen Key ein!"
-        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    
+    -- Prüfen ob leer
+    if inputKey == "" then
+        status.Text = "Bitte einen Key eingeben!"
+        status.TextColor3 = Color3.fromRGB(255, 80, 80)
         return
     end
-
-    -- UI aktualisieren (Laden)
-    statusLabel.Text = "Überprüfe Key..."
-    statusLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
-    checkButton.Enabled = false -- Button deaktivieren während ladet
-
-    -- HTTP Request an Panda Auth
-    local success, response = pcall(function()
-        local body = HttpService:JSONEncode({ key = inputKey })
-        return HttpService:PostAsync(API_URL, body, Enum.HttpContentType.ApplicationJson)
-    end)
-
-    -- Auswerten der Antwort
-    if success then
-        local decodeSuccess, data = pcall(function()
-            return HttpService:JSONDecode(response)
-        end)
-
-        if decodeSuccess then
-            -- HIER MUSST DU GGF. ETWAS ANPASSEN:
-            -- Panda Auth sendet meistens "success: true" oder "valid: true". 
-            -- Schau in die Doku von Panda Auth, wie das Feld genau heißt!
-            if data.success == true then 
-                statusLabel.Text = "✅ Key ist gültig!"
-                statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-            else
-                statusLabel.Text = "❌ Key ist ungültig oder abgelaufen!"
-                statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-            end
-        else
-            statusLabel.Text = "Fehler beim Lesen der API Antwort."
-            statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    
+    status.Text = "Prüfe..."
+    status.TextColor3 = Color3.fromRGB(255, 255, 100)
+    btn.Enabled = false
+    
+    -- Kleine künstliche Verzögerung (damit es nicht "sofort" passiert und etwas authentischer wirkt)
+    task.wait(1)
+    
+    local keyIsValid = false
+    
+    -- Schauen ob der eingetippte Key in unserer Tabelle existiert
+    for _, validKey in ipairs(validKeys) do
+        -- Groß-/Kleinschreibung ignorieren (optional, lösche string.lower wenn du exakte Schreibweise willst)
+        if string.lower(inputKey) == string.lower(validKey) then
+            keyIsValid = true
+            break -- Abbrechen, sobald wir einen Treffer haben
         end
-    else
-        -- Wenn die Verbindung komplett fehlschlägt (z.B. falsche URL, keine Internetverbindung)
-        statusLabel.Text = "Verbindungsfehler: " .. tostring(response)
-        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
     end
-
-    -- Button wieder aktivieren
-    checkButton.Enabled = true
+    
+    if keyIsValid then
+        status.Text = "✅ Erfolg! Lade Skript..."
+        status.TextColor3 = Color3.fromRGB(80, 255, 80)
+        task.wait(0.5)
+        
+        -- GUI ausblenden
+        screenGui:Destroy()
+        
+        -- ==========================================
+        -- 2. HIER DEIN LOADSTRING EINFÜGEN
+        -- ==========================================
+        local success, errorMsg = pcall(function()
+            -- Ersetze die URL mit deiner echten Pastebin/Raw GitHub URL
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/o88x8/888/refs/heads/888-Hub/Test.lua"))()
+        end)
+        
+        if not success then
+            warn("Fehler beim Laden des Skripts: " .. tostring(errorMsg))
+        end
+        -- ==========================================
+        
+    else
+        status.Text = "❌ Falscher Key!"
+        status.TextColor3 = Color3.fromRGB(255, 80, 80)
+        btn.Enabled = true
+    end
 end)
