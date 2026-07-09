@@ -2,8 +2,9 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
--- Fast Attack Settings
+-- Settings
 local FastAttackEnabled = false
 local FastAttackRange = 10^1000
 local TOGGLE_KEY = Enum.KeyCode.U
@@ -12,301 +13,388 @@ local RegisterHit = Net["RE/RegisterHit"]
 local RegisterAttack = Net["RE/RegisterAttack"]
 local FastAttackConnection = nil
 
--- Loop TP Settings
 local teleporting = false
 local targetPlayer = nil
 local teleportCooldown = 0.1
 
--- Fly Settings
 local FlyEnabled = false
 local FlySpeed = 250
 local FLY_KEY = Enum.KeyCode.G
 local FlyConnection = nil
 local originalCanCollide = {}
 
--- ESP Settings
 local ESPEnabled = false
 local ESPConnection = nil
 local ESPObjects = {}
 
+-- UI Theme Colors
+local theme = {
+    bg = Color3.fromRGB(25, 28, 30),
+    card = Color3.fromRGB(32, 35, 38),
+    sidebar = Color3.fromRGB(20, 23, 25),
+    accentGreen = Color3.fromRGB(0, 255, 136),
+    accentBlue = Color3.fromRGB(0, 187, 255),
+    textMain = Color3.fromRGB(240, 240, 240),
+    textMuted = Color3.fromRGB(120, 120, 125),
+    stroke = Color3.fromRGB(255, 255, 255)
+}
+
+local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+local function CreateGradient()
+    local grad = Instance.new("UIGradient")
+    grad.Color = ColorSequence.new(theme.accentGreen, theme.accentBlue)
+    grad.Rotation = 90
+    return grad
+end
+
+local function ApplyHoverEffect(btn)
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, tweenInfo, {BackgroundTransparency = 0.7}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        if not btn:GetAttribute("Selected") then
+            TweenService:Create(btn, tweenInfo, {BackgroundTransparency = 1}):Play()
+        end
+    end)
+end
+
 local function CreateGUI()
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "ScriptHub"
+    ScreenGui.Name = "NoobezHub"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-    -- Main Frame
-    local Frame = Instance.new("Frame")
-    Frame.Name = "MainFrame"
-    Frame.Parent = ScreenGui
-    Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    Frame.BorderSizePixel = 0
-    Frame.Position = UDim2.new(0.5, -120, 0.1, 0)
-    Frame.Size = UDim2.new(0, 240, 0, 485) 
-    Frame.ClipsDescendants = false
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Size = UDim2.new(0, 550, 0, 400)
+    MainFrame.Position = UDim2.new(0.5, -275, 0.5, -200)
+    MainFrame.BackgroundColor3 = theme.bg
+    MainFrame.BackgroundTransparency = 0.05
+    MainFrame.Parent = ScreenGui
 
-    local MainCorner = Instance.new("UICorner")
-    MainCorner.CornerRadius = UDim.new(0, 10)
-    MainCorner.Parent = Frame
-
-    local MainStroke = Instance.new("UIStroke")
-    MainStroke.Color = Color3.fromRGB(55, 55, 55)
+    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+    local MainStroke = Instance.new("UIStroke", MainFrame)
+    MainStroke.Color = theme.stroke
+    MainStroke.Transparency = 0.85
     MainStroke.Thickness = 1
-    MainStroke.Parent = Frame
 
     -- Title Bar
     local TitleBar = Instance.new("Frame")
-    TitleBar.Size = UDim2.new(1, 0, 0, 32)
-    TitleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    TitleBar.Size = UDim2.new(1, 0, 0, 38)
+    TitleBar.BackgroundColor3 = theme.sidebar
     TitleBar.BorderSizePixel = 0
-    TitleBar.Parent = Frame
-
-    local TitleCorner = Instance.new("UICorner")
-    TitleCorner.CornerRadius = UDim.new(0, 10)
-    TitleCorner.Parent = TitleBar
-
+    TitleBar.Parent = MainFrame
+    Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 12)
+    
     local TitleFix = Instance.new("Frame")
-    TitleFix.Size = UDim2.new(1, 0, 0, 10)
-    TitleFix.Position = UDim2.new(0, 0, 1, -10)
-    TitleFix.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    TitleFix.Size = UDim2.new(1, 0, 0, 12)
+    TitleFix.Position = UDim2.new(0, 0, 1, -12)
+    TitleFix.BackgroundColor3 = theme.sidebar
     TitleFix.BorderSizePixel = 0
     TitleFix.Parent = TitleBar
 
+    local TitleGradientBar = Instance.new("Frame")
+    TitleGradientBar.Size = UDim2.new(1, 0, 0, 2)
+    TitleGradientBar.Position = UDim2.new(0, 0, 1, -2)
+    TitleGradientBar.BackgroundColor3 = theme.accentGreen
+    TitleGradientBar.Parent = TitleBar
+    CreateGradient().Parent = TitleGradientBar
+
+    local Icon = Instance.new("TextLabel")
+    Icon.Size = UDim2.new(0, 20, 0, 20)
+    Icon.Position = UDim2.new(0, 15, 0.5, -10)
+    Icon.BackgroundTransparency = 1
+    Icon.Text = "◆"
+    Icon.TextColor3 = theme.accentGreen
+    Icon.TextSize = 14
+    Icon.Parent = TitleBar
+
     local Title = Instance.new("TextLabel")
-    Title.Size = UDim2.new(1, 0, 1, 0)
-    Title.TextColor3 = Color3.fromRGB(200, 200, 200)
-    Title.Text = "noobez Hub"
-    Title.Font = Enum.Font.GothamBold
-    Title.TextSize = 13
+    Title.Size = UDim2.new(0, 100, 1, 0)
+    Title.Position = UDim2.new(0, 40, 0, 0)
     Title.BackgroundTransparency = 1
+    Title.Text = "noobez Hub"
+    Title.TextColor3 = theme.textMain
+    Title.Font = Enum.Font.GothamBold
+    Title.TextSize = 14
+    Title.TextXAlignment = Enum.TextXAlignment.Left
     Title.Parent = TitleBar
 
-    -- ===== FAST ATTACK SECTION =====
-    local FATitle = Instance.new("TextLabel")
-    FATitle.Size = UDim2.new(0.9, 0, 0, 18)
-    FATitle.Position = UDim2.new(0.05, 0, 0, 38)
-    FATitle.BackgroundTransparency = 1
-    FATitle.TextColor3 = Color3.fromRGB(140, 140, 140)
-    FATitle.Text = "FAST ATTACK"
-    FATitle.Font = Enum.Font.GothamBold
-    FATitle.TextSize = 10
-    FATitle.Parent = Frame
+    local Version = Instance.new("TextLabel")
+    Version.Size = UDim2.new(0, 40, 1, 0)
+    Version.Position = UDim2.new(1, -50, 0, 0)
+    Version.BackgroundTransparency = 1
+    Version.Text = "v1.0"
+    Version.TextColor3 = theme.textMuted
+    Version.Font = Enum.Font.GothamMedium
+    Version.TextSize = 11
+    Version.Parent = TitleBar
 
-    local FastAttackBtn = Instance.new("TextButton")
-    FastAttackBtn.Name = "FastAttackBtn"
-    FastAttackBtn.Size = UDim2.new(0.9, 0, 0, 32)
-    FastAttackBtn.Position = UDim2.new(0.05, 0, 0, 58)
-    FastAttackBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-    FastAttackBtn.BorderSizePixel = 0
-    FastAttackBtn.Font = Enum.Font.GothamBold
-    FastAttackBtn.Text = "Fast Attack: OFF"
-    FastAttackBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    FastAttackBtn.TextSize = 13
-    FastAttackBtn.AutoButtonColor = false
-    FastAttackBtn.Parent = Frame
+    -- Sidebar
+    local Sidebar = Instance.new("Frame")
+    Sidebar.Size = UDim2.new(0, 120, 1, -38)
+    Sidebar.Position = UDim2.new(0, 0, 0, 38)
+    Sidebar.BackgroundColor3 = theme.sidebar
+    Sidebar.BorderSizePixel = 0
+    Sidebar.Parent = MainFrame
 
-    local FACorner = Instance.new("UICorner")
-    FACorner.CornerRadius = UDim.new(0, 6)
-    FACorner.Parent = FastAttackBtn
+    local SideStroke = Instance.new("UIStroke", Sidebar)
+    SideStroke.Color = theme.stroke
+    SideStroke.Transparency = 0.9
+    SideStroke.Thickness = 1
 
-    local Divider = Instance.new("Frame")
-    Divider.Size = UDim2.new(0.85, 0, 0, 1)
-    Divider.Position = UDim2.new(0.075, 0, 0, 98)
-    Divider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    Divider.BorderSizePixel = 0
-    Divider.Parent = Frame
+    local Pages = {}
+    local TabNames = {"Home", "Combat", "Move", "Visuals"}
+    local TabIcons = {"◎", "⚔", "✈", "◎"} -- Simple unicode icons
 
-    -- ===== ESP SECTION =====
-    local ESPTitle = Instance.new("TextLabel")
-    ESPTitle.Size = UDim2.new(0.9, 0, 0, 18)
-    ESPTitle.Position = UDim2.new(0.05, 0, 0, 105)
-    ESPTitle.BackgroundTransparency = 1
-    ESPTitle.TextColor3 = Color3.fromRGB(140, 140, 140)
-    ESPTitle.Text = "ESP"
-    ESPTitle.Font = Enum.Font.GothamBold
-    ESPTitle.TextSize = 10
-    ESPTitle.Parent = Frame
+    for i, name in ipairs(TabNames) do
+        local Tab = Instance.new("TextButton")
+        Tab.Size = UDim2.new(1, -10, 0, 35)
+        Tab.Position = UDim2.new(0, 5, 0, 10 + (i-1)*40)
+        Tab.BackgroundColor3 = theme.accentGreen
+        Tab.BackgroundTransparency = 1
+        Tab.Text = "  "..TabIcons[i].."  "..name
+        Tab.TextColor3 = theme.textMuted
+        Tab.Font = Enum.Font.GothamMedium
+        Tab.TextSize = 12
+        Tab.TextXAlignment = Enum.TextXAlignment.Left
+        Tab.AutoButtonColor = false
+        Tab.Parent = Sidebar
+        Instance.new("UICorner", Tab).CornerRadius = UDim.new(0, 6)
+        
+        ApplyHoverEffect(Tab)
 
-    local ESPBtn = Instance.new("TextButton")
-    ESPBtn.Name = "ESPBtn"
-    ESPBtn.Size = UDim2.new(0.9, 0, 0, 32)
-    ESPBtn.Position = UDim2.new(0.05, 0, 0, 125)
-    ESPBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-    ESPBtn.BorderSizePixel = 0
-    ESPBtn.Font = Enum.Font.GothamBold
-    ESPBtn.Text = "ESP: OFF"
-    ESPBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ESPBtn.TextSize = 13
-    ESPBtn.AutoButtonColor = false
-    ESPBtn.Parent = Frame
+        local Page = Instance.new("ScrollingFrame")
+        Page.Size = UDim2.new(1, -130, 1, -38)
+        Page.Position = UDim2.new(0, 120, 0, 38)
+        Page.BackgroundTransparency = 1
+        Page.BorderSizePixel = 0
+        Page.ScrollBarThickness = 3
+        Page.ScrollBarImageColor3 = theme.textMuted
+        Page.CanvasSize = UDim2.new(0, 0, 0, 0)
+        Page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        Page.Visible = (i == 1)
+        Page.Parent = MainFrame
 
-    local ESPCorner = Instance.new("UICorner")
-    ESPCorner.CornerRadius = UDim.new(0, 6)
-    ESPCorner.Parent = ESPBtn
+        local PageList = Instance.new("UIListLayout", Page)
+        PageList.Padding = UDim.new(0, 10)
+        PageList.SortOrder = Enum.SortOrder.LayoutOrder
 
-    local Divider1_5 = Instance.new("Frame")
-    Divider1_5.Size = UDim2.new(0.85, 0, 0, 1)
-    Divider1_5.Position = UDim2.new(0.075, 0, 0, 165)
-    Divider1_5.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    Divider1_5.BorderSizePixel = 0
-    Divider1_5.Parent = Frame
+        local PagePad = Instance.new("UIPadding", Page)
+        PagePad.PaddingLeft = UDim.new(0, 15)
+        PagePad.PaddingRight = UDim.new(0, 15)
+        PagePad.PaddingTop = UDim.new(0, 10)
 
-    -- ===== LOOP TP SECTION =====
-    local TPTitle = Instance.new("TextLabel")
-    TPTitle.Size = UDim2.new(0.9, 0, 0, 18)
-    TPTitle.Position = UDim2.new(0.05, 0, 0, 172)
-    TPTitle.BackgroundTransparency = 1
-    TPTitle.TextColor3 = Color3.fromRGB(140, 140, 140)
-    TPTitle.Text = "LOOP TELEPORT"
-    TPTitle.Font = Enum.Font.GothamBold
-    TPTitle.TextSize = 10
-    TPTitle.Parent = Frame
+        Pages[i] = {Tab = Tab, Page = Page}
+    end
 
-    local ScrollFrame = Instance.new("ScrollingFrame")
-    ScrollFrame.Size = UDim2.new(0.9, 0, 0, 140)
-    ScrollFrame.Position = UDim2.new(0.05, 0, 0, 192)
-    ScrollFrame.BackgroundTransparency = 1
-    ScrollFrame.BorderSizePixel = 0
-    ScrollFrame.ScrollBarThickness = 3
-    ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(70, 70, 70)
-    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    ScrollFrame.Parent = Frame
+    local function SwitchTab(idx)
+        for i, data in ipairs(Pages) do
+            local isSelected = (i == idx)
+            data.Page.Visible = isSelected
+            data.Tab:SetAttribute("Selected", isSelected)
+            
+            if isSelected then
+                TweenService:Create(data.Tab, tweenInfo, {BackgroundTransparency = 0.6}):Play()
+                data.Tab.TextColor3 = theme.textMain
+                if not data.Tab:FindFirstChild("Grad") then
+                    local g = CreateGradient()
+                    g.Name = "Grad"
+                    g.Parent = data.Tab
+                end
+            else
+                TweenService:Create(data.Tab, tweenInfo, {BackgroundTransparency = 1}):Play()
+                data.Tab.TextColor3 = theme.textMuted
+                local g = data.Tab:FindFirstChild("Grad")
+                if g then g:Destroy() end
+            end
+        end
+    end
 
-    local ListLayout = Instance.new("UIListLayout")
-    ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    for i, data in ipairs(Pages) do
+        data.Tab.MouseButton1Click:Connect(function() SwitchTab(i) end)
+    end
+    SwitchTab(1)
+
+    -- Helper to create cards
+    local function CreateCard(parent, title, order)
+        local Card = Instance.new("Frame")
+        Card.Size = UDim2.new(1, 0, 0, 80) -- Base height, UIList will stretch if needed
+        Card.BackgroundColor3 = theme.card
+        Card.BorderSizePixel = 0
+        Card.LayoutOrder = order
+        Card.AutomaticSize = Enum.AutomaticSize.Y
+        Card.Parent = parent
+
+        Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 8)
+        local CardStroke = Instance.new("UIStroke", Card)
+        CardStroke.Color = theme.stroke
+        CardStroke.Transparency = 0.88
+        CardStroke.Thickness = 1
+
+        local Header = Instance.new("TextLabel")
+        Header.Size = UDim2.new(1, -20, 0, 25)
+        Header.Position = UDim2.new(0, 10, 0, 8)
+        Header.BackgroundTransparency = 1
+        Header.RichText = true
+        Header.Text = '<font color="#00ff88">'..string.sub(title, 1, 1)..'</font><font color="#00bbff">'..string.sub(title, 2)..' </font>'
+        Header.TextColor3 = theme.textMain
+        Header.Font = Enum.Font.GothamBold
+        Header.TextSize = 13
+        Header.TextXAlignment = Enum.TextXAlignment.Left
+        Header.Parent = Card
+
+        local Content = Instance.new("Frame")
+        Content.Size = UDim2.new(1, -20, 0, 30)
+        Content.Position = UDim2.new(0, 10, 0, 35)
+        Content.BackgroundTransparency = 1
+        Content.Parent = Card
+        
+        local ContentPad = Instance.new("UIPadding", Content)
+        ContentPad.PaddingBottom = UDim.new(0, 10)
+
+        return Card, Content
+    end
+
+    local function CreateToggle(parent)
+        local Btn = Instance.new("TextButton")
+        Btn.Size = UDim2.new(0, 100, 0, 28)
+        Btn.Position = UDim2.new(1, -100, 0, 0)
+        Btn.BackgroundColor3 = theme.bg
+        Btn.BorderSizePixel = 0
+        Btn.Text = "OFF"
+        Btn.TextColor3 = theme.textMuted
+        Btn.Font = Enum.Font.GothamBold
+        Btn.TextSize = 12
+        Btn.AutoButtonColor = false
+        Btn.Parent = parent
+        Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+        
+        local BtnStroke = Instance.new("UIStroke", Btn)
+        BtnStroke.Color = theme.stroke
+        BtnStroke.Transparency = 0.8
+
+        Btn.MouseEnter:Connect(function()
+            TweenService:Create(BtnStroke, tweenInfo, {Transparency = 0.5}):Play()
+        end)
+        Btn.MouseLeave:Connect(function()
+            if not Btn:GetAttribute("On") then
+                TweenService:Create(BtnStroke, tweenInfo, {Transparency = 0.8}):Play()
+            end
+        end)
+
+        return Btn
+    end
+
+    -- === BUILD PAGES ===
+    
+    -- HOME (Page 1)
+    local c1, cont1 = CreateCard(Pages[1].Page, "Welcome", 1)
+    cont1.Size = UDim2.new(1, 0, 0, 40)
+    local WelText = Instance.new("TextLabel")
+    WelText.Size = UDim2.new(1, 0, 1, 0)
+    WelText.BackgroundTransparency = 1
+    WelText.Text = "Premium script hub made by Sardo."
+    WelText.TextColor3 = theme.textMuted
+    WelText.Font = Enum.Font.Gotham
+    WelText.TextSize = 11
+    WelText.TextXAlignment = Enum.TextXAlignment.Left
+    WelText.Parent = cont1
+
+    local c2, cont2 = CreateCard(Pages[1].Page, "Keybinds", 2)
+    cont2.Size = UDim2.new(1, 0, 0, 60)
+    local KbText = Instance.new("TextLabel")
+    KbText.Size = UDim2.new(1, 0, 1, 0)
+    KbText.BackgroundTransparency = 1
+    KbText.Text = "[U] Fast Attack\n[G] Fly + Noclip\n[Ctrl+T] Toggle Hub"
+    KbText.TextColor3 = theme.textMuted
+    KbText.Font = Enum.Font.Gotham
+    KbText.TextSize = 11
+    KbText.TextXAlignment = Enum.TextXAlignment.Left
+    KbText.Parent = cont2
+
+    -- COMBAT (Page 2)
+    local c3, cont3 = CreateCard(Pages[2].Page, "Fast Attack", 1)
+    local FastAttackBtn = CreateToggle(cont3)
+    
+    -- MOVEMENT (Page 3)
+    local c4, cont4 = CreateCard(Pages[3].Page, "Fly + Noclip", 1)
+    local FlyBtn = CreateToggle(cont4)
+
+    local c5, cont5 = CreateCard(Pages[3].Page, "Loop Teleport", 2)
+    cont5.Size = UDim2.new(1, 0, 0, 160)
+    
+    local PlayerScrollFrame = Instance.new("ScrollingFrame")
+    PlayerScrollFrame.Size = UDim2.new(1, 0, 0, 90)
+    PlayerScrollFrame.Position = UDim2.new(0, 0, 0, 30)
+    PlayerScrollFrame.BackgroundTransparency = 1
+    PlayerScrollFrame.BorderSizePixel = 0
+    PlayerScrollFrame.ScrollBarThickness = 2
+    PlayerScrollFrame.ScrollBarImageColor3 = theme.textMuted
+    PlayerScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    PlayerScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    PlayerScrollFrame.Parent = cont5
+
+    local ListLayout = Instance.new("UIListLayout", PlayerScrollFrame)
     ListLayout.Padding = UDim.new(0, 2)
-    ListLayout.Parent = ScrollFrame
+    ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
-    local TPToggleBtn = Instance.new("TextButton")
-    TPToggleBtn.Name = "TPToggleBtn"
-    TPToggleBtn.Size = UDim2.new(0.9, 0, 0, 30)
-    TPToggleBtn.Position = UDim2.new(0.05, 0, 0, 339)
-    TPToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 130, 50)
-    TPToggleBtn.BorderSizePixel = 0
-    TPToggleBtn.Font = Enum.Font.GothamBold
-    TPToggleBtn.Text = "START TP"
-    TPToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TPToggleBtn.TextSize = 13
-    TPToggleBtn.AutoButtonColor = false
-    TPToggleBtn.Parent = Frame
-
-    local TPCorner = Instance.new("UICorner")
-    TPCorner.CornerRadius = UDim.new(0, 6)
-    TPCorner.Parent = TPToggleBtn
+    local TPToggleBtn = CreateToggle(cont5)
+    TPToggleBtn.Position = UDim2.new(1, -100, 1, -30)
+    TPToggleBtn.Text = "START"
+    TPToggleBtn.Size = UDim2.new(0, 100, 0, 24)
 
     local TPStatus = Instance.new("TextLabel")
-    TPStatus.Size = UDim2.new(0.9, 0, 0, 14)
-    TPStatus.Position = UDim2.new(0.05, 0, 0, 375)
+    TPStatus.Size = UDim2.new(1, -110, 0, 15)
+    TPStatus.Position = UDim2.new(0, 0, 1, -30)
     TPStatus.BackgroundTransparency = 1
-    TPStatus.TextColor3 = Color3.fromRGB(90, 90, 90)
-    TPStatus.Text = "Off"
+    TPStatus.Text = "Status: Idle"
+    TPStatus.TextColor3 = theme.textMuted
     TPStatus.Font = Enum.Font.Gotham
-    TPStatus.TextSize = 9
-    TPStatus.Parent = Frame
+    TPStatus.TextSize = 10
+    TPStatus.TextXAlignment = Enum.TextXAlignment.Left
+    TPStatus.Parent = cont5
 
-    local Divider2 = Instance.new("Frame")
-    Divider2.Size = UDim2.new(0.85, 0, 0, 1)
-    Divider2.Position = UDim2.new(0.075, 0, 0, 395)
-    Divider2.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    Divider2.BorderSizePixel = 0
-    Divider2.Parent = Frame
+    -- VISUALS (Page 4)
+    local c6, cont6 = CreateCard(Pages[4].Page, "ESP", 1)
+    local ESPBtn = CreateToggle(cont6)
 
-    -- ===== FLY SECTION =====
-    local FlyTitle = Instance.new("TextLabel")
-    FlyTitle.Size = UDim2.new(0.9, 0, 0, 18)
-    FlyTitle.Position = UDim2.new(0.05, 0, 0, 402)
-    FlyTitle.BackgroundTransparency = 1
-    FlyTitle.TextColor3 = Color3.fromRGB(140, 140, 140)
-    FlyTitle.Text = "FLY + NOCLIP [G]"
-    FlyTitle.Font = Enum.Font.GothamBold
-    FlyTitle.TextSize = 10
-    FlyTitle.Parent = Frame
-
-    local FlyBtn = Instance.new("TextButton")
-    FlyBtn.Name = "FlyBtn"
-    FlyBtn.Size = UDim2.new(0.9, 0, 0, 32)
-    FlyBtn.Position = UDim2.new(0.05, 0, 0, 422)
-    FlyBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-    FlyBtn.BorderSizePixel = 0
-    FlyBtn.Font = Enum.Font.GothamBold
-    FlyBtn.Text = "Fly: OFF"
-    FlyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    FlyBtn.TextSize = 13
-    FlyBtn.AutoButtonColor = false
-    FlyBtn.Parent = Frame
-
-    local FlyCorner = Instance.new("UICorner")
-    FlyCorner.CornerRadius = UDim.new(0, 6)
-    FlyCorner.Parent = FlyBtn
-
-    local Divider3 = Instance.new("Frame")
-    Divider3.Size = UDim2.new(0.85, 0, 0, 1)
-    Divider3.Position = UDim2.new(0.075, 0, 0, 459)
-    Divider3.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    Divider3.BorderSizePixel = 0
-    Divider3.Parent = Frame
-
-    local Credit = Instance.new("TextLabel")
-    Credit.Size = UDim2.new(1, 0, 0, 13)
-    Credit.Position = UDim2.new(0, 0, 1, -13)
-    Credit.BackgroundTransparency = 1
-    Credit.TextColor3 = Color3.fromRGB(60, 60, 60)
-    Credit.Text = "Made by Sardo"
-    Credit.Font = Enum.Font.Gotham
-    Credit.FontFace = Font.new("rbxassetid://FjwW7ZQRfhtGpRLb9vBFXw", Enum.FontWeight.Medium)
-    Credit.TextSize = 10
-    Credit.Parent = Frame
-
-    -- Draggable
-    local dragging = false
-    local dragInput, dragStart, startPos
-
+    -- Dragging Logic
+    local dragging, dragInput, dragStart, startPos
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
-            startPos = Frame.Position
+            startPos = MainFrame.Position
             input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
             end)
         end
     end)
-
-    Frame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
+    TitleBar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
     end)
-
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - dragStart
-            Frame.Position = UDim2.new(
-                startPos.X.Scale, startPos.X.Offset + delta.X,
-                startPos.Y.Scale, startPos.Y.Offset + delta.Y
-            )
+            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
 
     ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
-
-    return FastAttackBtn, TPToggleBtn, TPStatus, ScrollFrame, FlyBtn, ESPBtn
+    return FastAttackBtn, FlyBtn, TPToggleBtn, TPStatus, PlayerScrollFrame, ESPBtn
 end
 
--- Build GUI
-local FastAttackBtn, TPToggleBtn, TPStatus, PlayerScrollFrame, FlyBtn, ESPBtn = CreateGUI()
+local FastAttackBtn, FlyBtn, TPToggleBtn, TPStatus, PlayerScrollFrame, ESPBtn = CreateGUI()
 local playerButtons = {}
 
--- ===== PLAYER LIST LOGIC =====
+-- Loop TP Player List
 local function createPlayerButton(player, index)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, 24)
-    btn.BackgroundColor3 = Color3.fromRGB(38, 38, 38)
-    btn.TextColor3 = Color3.fromRGB(170, 170, 170)
-    btn.Text = player.DisplayName
+    btn.Size = UDim2.new(1, 0, 0, 22)
+    btn.BackgroundColor3 = theme.bg
+    btn.TextColor3 = theme.textMuted
+    btn.Text = "  "..player.DisplayName
     btn.Font = Enum.Font.Gotham
     btn.TextSize = 11
     btn.TextXAlignment = Enum.TextXAlignment.Left
@@ -314,129 +402,75 @@ local function createPlayerButton(player, index)
     btn.LayoutOrder = index
     btn.AutoButtonColor = false
     btn.Parent = PlayerScrollFrame
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
 
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 4)
-    btnCorner.Parent = btn
-
-    local pad = Instance.new("UIPadding")
-    pad.PaddingLeft = UDim.new(0, 10)
-    pad.Parent = btn
-
-    local indicator = Instance.new("Frame")
-    indicator.Size = UDim2.new(0, 3, 0.5, 0)
-    indicator.Position = UDim2.new(0, 0, 0.25, 0)
-    indicator.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
-    indicator.BorderSizePixel = 0
-    indicator.Visible = false
-    indicator.Parent = btn
-
-    local indCorner = Instance.new("UICorner")
-    indCorner.CornerRadius = UDim.new(0, 2)
-    indCorner.Parent = indicator
-
-    btn.MouseEnter:Connect(function()
-        if targetPlayer ~= player then
-            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        end
-    end)
-    btn.MouseLeave:Connect(function()
-        if targetPlayer ~= player then
-            btn.BackgroundColor3 = Color3.fromRGB(38, 38, 38)
-        end
-    end)
+    btn.MouseEnter:Connect(function() if targetPlayer ~= player then btn.BackgroundColor3 = theme.card end end)
+    btn.MouseLeave:Connect(function() if targetPlayer ~= player then btn.BackgroundColor3 = theme.bg end end)
 
     btn.MouseButton1Click:Connect(function()
         for p, b in pairs(playerButtons) do
-            b.Button.BackgroundColor3 = Color3.fromRGB(38, 38, 38)
-            b.Indicator.Visible = false
-            b.Button.TextColor3 = Color3.fromRGB(170, 170, 170)
+            b.BackgroundColor3 = theme.bg
+            b.TextColor3 = theme.textMuted
         end
         targetPlayer = player
-        btn.BackgroundColor3 = Color3.fromRGB(40, 50, 40)
-        indicator.Visible = true
-        btn.TextColor3 = Color3.fromRGB(100, 220, 100)
-        if teleporting then
-            TPStatus.Text = "TP > " .. player.DisplayName
-        end
+        btn.BackgroundColor3 = theme.card
+        btn.TextColor3 = theme.accentGreen
+        if teleporting then TPStatus.Text = "Target: "..player.DisplayName end
     end)
-
-    playerButtons[player] = {Button = btn, Indicator = indicator}
+    playerButtons[player] = btn
 end
 
 local function refreshPlayerList()
-    for _, child in pairs(PlayerScrollFrame:GetChildren()) do
-        if child:IsA("TextButton") then
-            child:Destroy()
-        end
-    end
+    for _, child in pairs(PlayerScrollFrame:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
     playerButtons = {}
-
     local sorted = {}
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= Players.LocalPlayer then
-            table.insert(sorted, p)
-        end
-    end
-    table.sort(sorted, function(a, b)
-        return a.DisplayName:lower() < b.DisplayName:lower()
-    end)
-
-    for i, player in pairs(sorted) do
-        createPlayerButton(player, i)
-    end
-
+    for _, p in pairs(Players:GetPlayers()) do if p ~= Players.LocalPlayer then table.insert(sorted, p) end end
+    table.sort(sorted, function(a, b) return a.DisplayName:lower() < b.DisplayName:lower() end)
+    for i, player in pairs(sorted) do createPlayerButton(player, i) end
     if targetPlayer and playerButtons[targetPlayer] then
-        playerButtons[targetPlayer].Button.BackgroundColor3 = Color3.fromRGB(40, 50, 40)
-        playerButtons[targetPlayer].Indicator.Visible = true
-        playerButtons[targetPlayer].Button.TextColor3 = Color3.fromRGB(100, 220, 100)
+        playerButtons[targetPlayer].BackgroundColor3 = theme.card
+        playerButtons[targetPlayer].TextColor3 = theme.accentGreen
     end
 end
 
--- ===== DYNAMIC PLAYER JOIN / LEAVE HANDLING =====
-local function onPlayerAdded(player)
-    -- Refresh TP list immediately when a new player joins
-    refreshPlayerList()
-    -- ESP automatically picks them up on the next RenderStepped frame when their character loads
-end
-
-local function onPlayerRemoving(player)
-    -- 1. Handle TP List & Target
+Players.PlayerAdded:Connect(function(p) refreshPlayerList() end)
+Players.PlayerRemoving:Connect(function(player)
     if player == targetPlayer then
-        teleporting = false
-        targetPlayer = nil
-        TPToggleBtn.Text = "START TP"
-        TPToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 130, 50)
-        TPStatus.Text = "Player left"
+        teleporting = false; targetPlayer = nil
+        TPToggleBtn.Text = "START"; TPToggleBtn:SetAttribute("On", false)
+        TweenService:Create(TPToggleBtn, tweenInfo, {BackgroundColor3 = theme.bg, TextColor3 = theme.textMuted}):Play()
+        TPToggleBtn.UIStroke.Transparency = 0.8
+        TPStatus.Text = "Status: Player left"
     end
-    
-    -- 2. Handle ESP Cleanup (Destroy billboard instantly so it doesn't linger)
-    if ESPObjects[player] then
-        if ESPObjects[player].Parent then ESPObjects[player].Parent:Destroy() end
-        ESPObjects[player] = nil
-    end
-    
-    -- 3. Refresh GUI List to remove their button
+    if ESPObjects[player] then if ESPObjects[player].Parent then ESPObjects[player].Parent:Destroy() end ESPObjects[player] = nil end
     refreshPlayerList()
-end
-
-Players.PlayerAdded:Connect(onPlayerAdded)
-Players.PlayerRemoving:Connect(onPlayerRemoving)
-
--- Initial refresh for players already in the game
+end)
 refreshPlayerList()
 
--- ===== FAST ATTACK LOGIC =====
+-- Toggle UI Helper
+local function ToggleButtonStyle(Btn, state)
+    Btn:SetAttribute("On", state)
+    if state then
+        Btn.Text = "ON"
+        TweenService:Create(Btn, tweenInfo, {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+        Btn.UIStroke.Transparency = 0.4
+        if not Btn:FindFirstChild("Grad") then CreateGradient().Parent = Btn end
+    else
+        Btn.Text = "OFF"
+        TweenService:Create(Btn, tweenInfo, {TextColor3 = theme.textMuted}):Play()
+        Btn.UIStroke.Transparency = 0.8
+        local g = Btn:FindFirstChild("Grad") if g then g:Destroy() end
+    end
+end
+
+-- === LOGIC ===
+
+-- Fast Attack
 local function AttackMultipleTargets(targets)
     pcall(function()
         if not targets or #targets == 0 then return end
         local allTargets = {}
-        for _, targetChar in pairs(targets) do
-            local head = targetChar:FindFirstChild("Head")
-            if head then
-                table.insert(allTargets, {targetChar, head})
-            end
-        end
+        for _, t in pairs(targets) do local h = t:FindFirstChild("Head") if h then table.insert(allTargets, {t, h}) end end
         if #allTargets == 0 then return end
         RegisterAttack:FireServer(0)
         RegisterHit:FireServer(allTargets[1][2], allTargets)
@@ -448,298 +482,146 @@ local function StartFastAttack()
     FastAttackConnection = task.spawn(function()
         while FastAttackEnabled do
             task.wait(0.01)
-            local myChar = Players.LocalPlayer.Character
-            local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+            local myChar = Players.LocalPlayer.Character; local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
             if not myHRP then continue end
-            local targetsInRange = {}
-            for _, player in pairs(Players:GetPlayers()) do
-                if player ~= Players.LocalPlayer and player.Character then
-                    local humanoid = player.Character:FindFirstChild("Humanoid")
-                    local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-                    if humanoid and hrp and humanoid.Health > 0 then
-                        if (hrp.Position - myHRP.Position).Magnitude <= FastAttackRange then
-                            table.insert(targetsInRange, player.Character)
-                        end
-                    end
+            local t = {}
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= Players.LocalPlayer and p.Character then
+                    local h, hr = p.Character:FindFirstChild("Humanoid"), p.Character:FindFirstChild("HumanoidRootPart")
+                    if h and hr and h.Health > 0 and (hr.Position - myHRP.Position).Magnitude <= FastAttackRange then table.insert(t, p.Character) end
                 end
             end
-            local enemiesFolder = workspace:FindFirstChild("Enemies")
-            if enemiesFolder then
-                for _, npc in pairs(enemiesFolder:GetChildren()) do
-                    local humanoid = npc:FindFirstChild("Humanoid")
-                    local hrp = npc:FindFirstChild("HumanoidRootPart")
-                    if humanoid and hrp and humanoid.Health > 0 then
-                        if (hrp.Position - myHRP.Position).Magnitude <= FastAttackRange then
-                            table.insert(targetsInRange, npc)
-                        end
-                    end
-                end
-            end
-            if #targetsInRange > 0 then
-                AttackMultipleTargets(targetsInRange)
-            end
+            local e = workspace:FindFirstChild("Enemies")
+            if e then for _, n in pairs(e:GetChildren()) do
+                local h, hr = n:FindFirstChild("Humanoid"), n:FindFirstChild("HumanoidRootPart")
+                if h and hr and h.Health > 0 and (hr.Position - myHRP.Position).Magnitude <= FastAttackRange then table.insert(t, n) end
+            end end
+            if #t > 0 then AttackMultipleTargets(t) end
         end
     end)
 end
+local function StopFastAttack() if FastAttackConnection then task.cancel(FastAttackConnection) FastAttackConnection = nil end end
 
-local function StopFastAttack()
-    if FastAttackConnection then
-        task.cancel(FastAttackConnection)
-        FastAttackConnection = nil
-    end
-end
-
-local function ToggleFastAttack()
+FastAttackBtn.MouseButton1Click:Connect(function()
     FastAttackEnabled = not FastAttackEnabled
-    if FastAttackEnabled then
-        FastAttackBtn.Text = "Fast Attack: ON"
-        FastAttackBtn.BackgroundColor3 = Color3.fromRGB(60, 255, 60)
-        StartFastAttack()
-    else
-        FastAttackBtn.Text = "Fast Attack: OFF"
-        FastAttackBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-        StopFastAttack()
-    end
+    ToggleButtonStyle(FastAttackBtn, FastAttackEnabled)
+    if FastAttackEnabled then StartFastAttack() else StopFastAttack() end
+end)
+
+-- Fly
+local function EnableNoclip(c) originalCanCollide = {} for _, p in pairs(c:GetDescendants()) do if p:IsA("BasePart") then originalCanCollide[p] = p.CanCollide p.CanCollide = false end end end
+local function DisableNoclip(c) for p, v in pairs(originalCanCollide) do if p and p.Parent then p.CanCollide = v end end originalCanCollide = {} end
+local function MaintainNoclip(c) for _, p in pairs(c:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end end
+
+local function StartFly()
+    local c = Players.LocalPlayer.Character; local h = c and c:FindFirstChildOfClass("Humanoid"); local r = c and c:FindFirstChild("HumanoidRootPart")
+    if not h or not r then return end
+    h.PlatformStand = true; EnableNoclip(c)
+    FlyConnection = RunService.Heartbeat:Connect(function()
+        if not FlyEnabled or not c or not c.Parent then StopFly() return end
+        MaintainNoclip(c)
+        local cam = workspace.CurrentCamera; local d = Vector3.zero
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then d = d + cam.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then d = d - cam.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then d = d - cam.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then d = d + cam.CFrame.RightVector end
+        if d.Magnitude > 0 then d = d.Unit end
+        r.AssemblyLinearVelocity = d * FlySpeed
+    end)
+end
+local function StopFly()
+    if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
+    local c = Players.LocalPlayer.Character; local h = c and c:FindFirstChildOfClass("Humanoid"); local r = c and c:FindFirstChild("HumanoidRootPart")
+    if h then h.PlatformStand = false end if r then r.AssemblyLinearVelocity = Vector3.zero end if c then DisableNoclip(c) end
 end
 
-FastAttackBtn.MouseButton1Click:Connect(ToggleFastAttack)
+FlyBtn.MouseButton1Click:Connect(function()
+    FlyEnabled = not FlyEnabled
+    ToggleButtonStyle(FlyBtn, FlyEnabled)
+    if FlyEnabled then StartFly() else StopFly() end
+end)
 
--- ===== ESP LOGIC =====
-local function ClearESP()
-    for _, obj in pairs(ESPObjects) do
-        if obj and obj.Parent then
-            obj.Parent:Destroy()
+-- Loop TP
+TPToggleBtn.MouseButton1Click:Connect(function()
+    if not targetPlayer then TPStatus.Text = "Status: Select a player"; return end
+    teleporting = not teleporting
+    if teleporting then
+        TPToggleBtn.Text = "STOP"
+        ToggleButtonStyle(TPToggleBtn, true)
+        TPStatus.Text = "Target: "..targetPlayer.DisplayName
+    else
+        TPToggleBtn.Text = "START"
+        ToggleButtonStyle(TPToggleBtn, false)
+        TPStatus.Text = "Status: Idle"
+    end
+end)
+
+local lastTP = 0
+RunService.Heartbeat:Connect(function()
+    if teleporting and targetPlayer then
+        local n = tick()
+        if n - lastTP >= teleportCooldown then
+            local c, t = Players.LocalPlayer.Character, targetPlayer.Character
+            if c and t then
+                local h1, h2 = c:FindFirstChild("HumanoidRootPart"), t:FindFirstChild("HumanoidRootPart")
+                if h1 and h2 then h1.CFrame = h2.CFrame * CFrame.new(0, 0, 3) lastTP = n end
+            end
         end
     end
-    ESPObjects = {}
-end
+end)
 
+-- ESP
+local function ClearESP() for _, o in pairs(ESPObjects) do if o and o.Parent then o.Parent:Destroy() end end ESPObjects = {} end
 local function UpdateESP()
-    local myChar = Players.LocalPlayer.Character
-    local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
-    if not myHRP then return end
-
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= Players.LocalPlayer then
-            local char = player.Character
-            local head = char and char:FindFirstChild("Head")
-            local hum = char and char:FindFirstChild("Humanoid")
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-
-            if head and hum and hrp and hum.Health > 0 then
-                local dist = math.floor((hrp.Position - myHRP.Position).Magnitude)
-                local health = math.floor(hum.Health)
-
-                if not ESPObjects[player] then
-                    local bb = Instance.new("BillboardGui")
-                    bb.Adornee = head
-                    bb.Size = UDim2.new(0, 150, 0, 50)
-                    bb.StudsOffset = Vector3.new(0, 3, 0)
-                    bb.AlwaysOnTop = true
-                    bb.Parent = head
-
-                    local label = Instance.new("TextLabel")
-                    label.Size = UDim2.new(1, 0, 1, 0)
-                    label.BackgroundTransparency = 1
-                    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    label.TextStrokeTransparency = 0.5
-                    label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-                    label.Font = Enum.Font.GothamBold
-                    label.TextSize = 12
-                    label.TextScaled = true
-                    label.Text = player.DisplayName .. "\nHP: " .. health .. " | Dist: " .. dist
-                    label.Parent = bb
-
-                    ESPObjects[player] = label
+    local mc = Players.LocalPlayer.Character; local mhr = mc and mc:FindFirstChild("HumanoidRootPart")
+    if not mhr then return end
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= Players.LocalPlayer then
+            local c = p.Character; local h = c and c:FindFirstChild("Head"); local hm = c and c:FindFirstChild("Humanoid"); local hr = c and c:FindFirstChild("HumanoidRootPart")
+            if h and hm and hr and hm.Health > 0 then
+                local dist, hp = math.floor((hr.Position - mhr.Position).Magnitude), math.floor(hm.Health)
+                if not ESPObjects[p] then
+                    local bb = Instance.new("BillboardGui"); bb.Adornee = h; bb.Size = UDim2.new(0, 120, 0, 40); bb.StudsOffset = Vector3.new(0, 3, 0); bb.AlwaysOnTop = true; bb.Parent = h
+                    local l = Instance.new("TextLabel"); l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = theme.textMain; l.TextStrokeTransparency = 0.5; l.TextStrokeColor3 = Color3.new(0,0,0); l.Font = Enum.Font.GothamBold; l.TextSize = 11; l.TextScaled = true
+                    l.RichText = true
+                    l.Text = '<font color="#00ff88">'..p.DisplayName..'</font>\n<font color="#00bbff">HP: '..hp..' | '..dist..'m</font>'
+                    l.Parent = bb
+                    ESPObjects[p] = l
                 else
-                    ESPObjects[player].Text = player.DisplayName .. "\nHP: " .. health .. " | Dist: " .. dist
-                    ESPObjects[player].Parent.Adornee = head
+                    ESPObjects[p].Text = '<font color="#00ff88">'..p.DisplayName..'</font>\n<font color="#00bbff">HP: '..hp..' | '..dist..'m</font>'
+                    ESPObjects[p].Parent.Adornee = h
                 end
             else
-                if ESPObjects[player] then
-                    if ESPObjects[player].Parent then ESPObjects[player].Parent:Destroy() end
-                    ESPObjects[player] = nil
-                end
+                if ESPObjects[p] then if ESPObjects[p].Parent then ESPObjects[p].Parent:Destroy() end ESPObjects[p] = nil end
             end
         end
     end
 end
 
-local function ToggleESP()
+ESPBtn.MouseButton1Click:Connect(function()
     ESPEnabled = not ESPEnabled
+    ToggleButtonStyle(ESPBtn, ESPEnabled)
     if ESPEnabled then
-        ESPBtn.Text = "ESP: ON"
-        ESPBtn.BackgroundColor3 = Color3.fromRGB(60, 255, 60)
         if ESPConnection then ESPConnection:Disconnect() end
         ESPConnection = RunService.RenderStepped:Connect(UpdateESP)
     else
-        ESPBtn.Text = "ESP: OFF"
-        ESPBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-        if ESPConnection then
-            ESPConnection:Disconnect()
-            ESPConnection = nil
-        end
+        if ESPConnection then ESPConnection:Disconnect() ESPConnection = nil end
         ClearESP()
     end
-end
-
-ESPBtn.MouseButton1Click:Connect(ToggleESP)
-
--- ===== LOOP TP LOGIC =====
-TPToggleBtn.MouseButton1Click:Connect(function()
-    if not targetPlayer then
-        TPStatus.Text = "Pick a player first!"
-        return
-    end
-    teleporting = not teleporting
-    if teleporting then
-        TPToggleBtn.Text = "STOP TP"
-        TPToggleBtn.BackgroundColor3 = Color3.fromRGB(160, 45, 45)
-        TPStatus.Text = "TP > " .. targetPlayer.DisplayName
-    else
-        TPToggleBtn.Text = "START TP"
-        TPToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 130, 50)
-        TPStatus.Text = "Off"
-    end
 end)
 
-local lastTeleport = 0
-RunService.Heartbeat:Connect(function()
-    if teleporting and targetPlayer then
-        local now = tick()
-        if now - lastTeleport >= teleportCooldown then
-            local char = Players.LocalPlayer.Character
-            local tChar = targetPlayer.Character
-            if char and tChar then
-                local hrp = char:FindFirstChild("HumanoidRootPart")
-                local tHrp = tChar:FindFirstChild("HumanoidRootPart")
-                if hrp and tHrp then
-                    hrp.CFrame = tHrp.CFrame * CFrame.new(0, 0, 3)
-                    lastTeleport = now
-                end
-            end
-        end
-    end
-end)
-
--- ===== NOCLIP FUNCTION =====
-local function EnableNoclip(char)
-    originalCanCollide = {}
-    for _, part in pairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            originalCanCollide[part] = part.CanCollide
-            part.CanCollide = false
-        end
-    end
-end
-
-local function DisableNoclip(char)
-    for part, canCollide in pairs(originalCanCollide) do
-        if part and part.Parent then
-            part.CanCollide = canCollide
-        end
-    end
-    originalCanCollide = {}
-end
-
-local function MaintainNoclip(char)
-    for _, part in pairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.CanCollide = false
-        end
-    end
-end
-
--- ===== RAW WORKING FLY + NOCLIP LOGIC =====
-local function StartFly()
-    local char = Players.LocalPlayer.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    
-    if not hum or not hrp then return end
-    
-    hum.PlatformStand = true
-    EnableNoclip(char)
-    
-    FlyConnection = RunService.Heartbeat:Connect(function()
-        if not FlyEnabled or not char or not char.Parent then
-            StopFly()
-            return
-        end
-
-        MaintainNoclip(char)
-
-        local cam = workspace.CurrentCamera
-        local moveDir = Vector3.zero
-
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
-
-        if moveDir.Magnitude > 0 then
-            moveDir = moveDir.Unit
-        end
-
-        hrp.AssemblyLinearVelocity = moveDir * FlySpeed
-    end)
-end
-
-local function StopFly()
-    if FlyConnection then
-        FlyConnection:Disconnect()
-        FlyConnection = nil
-    end
-    
-    local char = Players.LocalPlayer.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    
-    if hum then
-        hum.PlatformStand = false
-    end
-    if hrp then
-        hrp.AssemblyLinearVelocity = Vector3.zero
-    end
-    if char then
-        DisableNoclip(char)
-    end
-end
-
-local function ToggleFly()
-    FlyEnabled = not FlyEnabled
-    if FlyEnabled then
-        FlyBtn.Text = "Fly + Noclip: ON"
-        FlyBtn.BackgroundColor3 = Color3.fromRGB(60, 255, 60)
-        StartFly()
-    else
-        FlyBtn.Text = "Fly + Noclip: OFF"
-        FlyBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-        StopFly()
-    end
-end
-
-FlyBtn.MouseButton1Click:Connect(ToggleFly)
-
--- ===== KEYBINDS =====
+-- Keybinds
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
-    if input.KeyCode == TOGGLE_KEY then
-        ToggleFastAttack()
-    end
-    if input.KeyCode == FLY_KEY then
-        ToggleFly()
-    end
+    if input.KeyCode == TOGGLE_KEY then FastAttackBtn.MouseButton1Click:Fire() end
+    if input.KeyCode == FLY_KEY then FlyBtn.MouseButton1Click:Fire() end
     if input.KeyCode == Enum.KeyCode.T and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-        local gui = FastAttackBtn:FindFirstAncestorOfClass("ScreenGui")
+        local gui = Players.LocalPlayer.PlayerGui:FindFirstChild("NoobezHub")
         if gui then gui.Enabled = not gui.Enabled end
     end
 end)
 
 print("=================================")
-print("noobez Hub Loaded!")
-print("Made by sardo")
-print("U = Toggle Fast Attack")
-print("G = Toggle Fly + Noclip")
-print("Ctrl+T = Hide/Show GUI")
+print("noobez Hub v1.0 Loaded!")
+print("Made by Sardo")
 print("=================================")
