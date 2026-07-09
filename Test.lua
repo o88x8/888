@@ -75,7 +75,7 @@ local function CreateGUI()
     local Title = Instance.new("TextLabel")
     Title.Size = UDim2.new(1, 0, 1, 0)
     Title.TextColor3 = Color3.fromRGB(200, 200, 200)
-    Title.Text = "888 Hub"
+    Title.Text = "noobez Hub"
     Title.Font = Enum.Font.GothamBold
     Title.TextSize = 13
     Title.BackgroundTransparency = 1
@@ -300,7 +300,7 @@ end
 local FastAttackBtn, TPToggleBtn, TPStatus, PlayerScrollFrame, FlyBtn, ESPBtn = CreateGUI()
 local playerButtons = {}
 
--- ===== PLAYER LIST =====
+-- ===== PLAYER LIST LOGIC =====
 local function createPlayerButton(player, index)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, 0, 0, 24)
@@ -393,8 +393,15 @@ local function refreshPlayerList()
     end
 end
 
-Players.PlayerAdded:Connect(function() refreshPlayerList() end)
-Players.PlayerRemoving:Connect(function(player)
+-- ===== DYNAMIC PLAYER JOIN / LEAVE HANDLING =====
+local function onPlayerAdded(player)
+    -- Refresh TP list immediately when a new player joins
+    refreshPlayerList()
+    -- ESP automatically picks them up on the next RenderStepped frame when their character loads
+end
+
+local function onPlayerRemoving(player)
+    -- 1. Handle TP List & Target
     if player == targetPlayer then
         teleporting = false
         targetPlayer = nil
@@ -402,13 +409,21 @@ Players.PlayerRemoving:Connect(function(player)
         TPToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 130, 50)
         TPStatus.Text = "Player left"
     end
-    -- Cleanup ESP if player leaves
+    
+    -- 2. Handle ESP Cleanup (Destroy billboard instantly so it doesn't linger)
     if ESPObjects[player] then
         if ESPObjects[player].Parent then ESPObjects[player].Parent:Destroy() end
         ESPObjects[player] = nil
     end
+    
+    -- 3. Refresh GUI List to remove their button
     refreshPlayerList()
-end)
+end
+
+Players.PlayerAdded:Connect(onPlayerAdded)
+Players.PlayerRemoving:Connect(onPlayerRemoving)
+
+-- Initial refresh for players already in the game
 refreshPlayerList()
 
 -- ===== FAST ATTACK LOGIC =====
@@ -537,12 +552,10 @@ local function UpdateESP()
 
                     ESPObjects[player] = label
                 else
-                    -- Update existing ESP
                     ESPObjects[player].Text = player.DisplayName .. "\nHP: " .. health .. " | Dist: " .. dist
                     ESPObjects[player].Parent.Adornee = head
                 end
             else
-                -- Remove ESP if dead or character doesn't exist
                 if ESPObjects[player] then
                     if ESPObjects[player].Parent then ESPObjects[player].Parent:Destroy() end
                     ESPObjects[player] = nil
@@ -724,7 +737,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 end)
 
 print("=================================")
-print("Script Hub Loaded!")
+print("noobez Hub Loaded!")
 print("Made by sardo")
 print("U = Toggle Fast Attack")
 print("G = Toggle Fly + Noclip")
