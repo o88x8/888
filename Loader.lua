@@ -2,13 +2,19 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
 -- ==========================================
--- 1. HIER DEINE KEYS EINTRAGEN
+-- ANTI-GEISTER-GUI SCHUTZ
+-- Löscht alte GUIs zwangsweise, bevor das neue erstellt wird
 -- ==========================================
+local oldGui = player.PlayerGui:FindFirstChild("SchluesselGUI")
+if oldGui then
+    oldGui:Destroy()
+end
+-- ==========================================
+
 local validKeys = {
     "TEST-KEY-456",
     "KEY-ABC-123"
 }
--- ==========================================
 
 -- === SAUBERES GUI ERSTELLEN ===
 local screenGui = Instance.new("ScreenGui")
@@ -71,7 +77,7 @@ statusLabel.Parent = mainFrame
 
 -- === LOGIK ===
 checkBtn.MouseButton1Click:Connect(function()
-    -- %s+ entfernt versehentlich mitkopierte Leerzeichen am Anfang/Ende
+    -- Entfernt unsichtbare Leerzeichen
     local inputKey = string.gsub(inputBox.Text, "%s+", "") 
     inputBox.Text = inputKey 
     
@@ -95,31 +101,29 @@ checkBtn.MouseButton1Click:Connect(function()
     end
     
     if keyIsValid then
-        statusLabel.Text = "✅ Erfolg! Lade Skript..."
+        statusLabel.Text = "✅ Erfolg!"
         statusLabel.TextColor3 = Color3.fromRGB(80, 255, 80)
         
-        task.wait(0.5) -- Kurze Pause, damit man den grünen Text sieht
-        
-        -- GUI sofort schließen, BEVOR das loadstring lädt
+        -- GUI sofort weg
         screenGui:Destroy()
         
         -- ==========================================
-        -- 2. HIER DEIN LOADSTRING EINFÜGEN
+        -- LADSTRING (Nur auskommentieren, wenn HTTP Requests erlaubt sind!)
         -- ==========================================
+        --[[ 
         local success, errorMsg = pcall(function()
-            -- Ersetze diese URL mit deinem Pastebin/Raw GitHub Link!
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/o88x8/888/refs/heads/888-Hub/Test.lua"))()
+            loadstring(game:HttpGet("HIER_DEINE_RAW_URL_EINTRAGEN"))()
         end)
         
         if not success then
-            -- Wenn das Laden fehlschlägt, wird es im Output-Fenster (F9) als Warnung angezeigt
-            warn("Fehler beim Laden des Skripts via loadstring: " .. tostring(errorMsg))
+            warn("Fehler: " .. tostring(errorMsg))
         end
+        --]]
         -- ==========================================
         
     else
         statusLabel.Text = "❌ Falscher Key!"
         statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
-        checkBtn.Enabled = true -- Button wieder freigeben für neuen Versuch
+        checkBtn.Enabled = true
     end
 end)
