@@ -2,7 +2,6 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local PhysicsService = game:GetService("PhysicsService")
 
 -- Fast Attack Settings
 local FastAttackEnabled = false
@@ -23,30 +22,6 @@ local FlyEnabled = false
 local FlySpeed = 150
 local FLY_KEY = Enum.KeyCode.G
 local FlyConnection = nil
-local NoclipAddedConnection = nil
-
--- Safe Noclip Setup (Using Collision Groups)
-local NoclipGroup = "Noclip_" .. Players.LocalPlayer.UserId
-pcall(function()
-    PhysicsService:CreateCollisionGroup(NoclipGroup)
-    PhysicsService:CollisionGroupSetCollidable("Default", NoclipGroup, false)
-end)
-
-local function ApplySafeNoclip(char)
-    for _, part in pairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            pcall(function() part.CollisionGroup = NoclipGroup end)
-        end
-    end
-end
-
-local function RemoveSafeNoclip(char)
-    for _, part in pairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            pcall(function() part.CollisionGroup = "Default" end)
-        end
-    end
-end
 
 local function CreateGUI()
     local ScreenGui = Instance.new("ScreenGui")
@@ -505,7 +480,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- ===== CLEAN FLY + SAFE NOCLIP LOGIC =====
+-- ===== CLEAN FLY LOGIC =====
 local function StartFly()
     local char = Players.LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -517,16 +492,6 @@ local function StartFly()
     hum.PlatformStand = true
     local animator = hum:FindFirstChildOfClass("Animator")
     if animator then animator.Enabled = false end
-    
-    -- Apply Safe Noclip (No loops, just changes collision group once)
-    ApplySafeNoclip(char)
-    
-    -- Listen for new parts (like if you equip a tool while flying)
-    NoclipAddedConnection = char.DescendantAdded:Connect(function(desc)
-        if desc:IsA("BasePart") then
-            pcall(function() desc.CollisionGroup = NoclipGroup end)
-        end
-    end)
     
     FlyConnection = RunService.Heartbeat:Connect(function()
         if not FlyEnabled or not char or not char.Parent then
@@ -556,23 +521,13 @@ local function StopFly()
         FlyConnection = nil
     end
     
-    -- Stop listening for new parts
-    if NoclipAddedConnection then
-        NoclipAddedConnection:Disconnect()
-        NoclipAddedConnection = nil
-    end
-    
-    -- Remove Safe Noclip
     local char = Players.LocalPlayer.Character
-    if char then
-        RemoveSafeNoclip(char)
-    end
-    
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     
     if hum then
         hum.PlatformStand = false
+        -- Re-enable animations
         local animator = hum:FindFirstChildOfClass("Animator")
         if animator then animator.Enabled = true end
     end
@@ -615,6 +570,6 @@ print("=================================")
 print("Script Hub Loaded!")
 print("Made by sardo")
 print("U = Toggle Fast Attack")
-print("G = Toggle Fly (With Safe Noclip)")
+print("G = Toggle Fly")
 print("Ctrl+T = Hide/Show GUI")
 print("=================================")
