@@ -536,8 +536,6 @@ local function StartFly()
         if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0, 1, 0) end
 
         if moveDir.Magnitude > 0 then
             moveDir = moveDir.Unit
@@ -603,7 +601,5 @@ print("Script Hub Loaded!")
 print("Made by sardo")
 print("U = Toggle Fast Attack")
 print("G = Toggle Fly + Noclip")
-print("Space = Fly Up")
-print("Left Shift = Fly Down")
 print("Ctrl+T = Hide/Show GUI")
 print("=================================")
