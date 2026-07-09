@@ -22,6 +22,7 @@ local FlyEnabled = false
 local FlySpeed = 150
 local FLY_KEY = Enum.KeyCode.G
 local FlyConnection = nil
+local NoclipConnection = nil
 
 local function CreateGUI()
     local ScreenGui = Instance.new("ScreenGui")
@@ -481,6 +482,35 @@ RunService.Heartbeat:Connect(function()
 end)
 
 -- ===== FLY LOGIC =====
+local function StartNoclip()
+    if NoclipConnection then return end
+    NoclipConnection = RunService.Stepped:Connect(function()
+        local char = Players.LocalPlayer.Character
+        if char then
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end)
+end
+
+local function StopNoclip()
+    if NoclipConnection then
+        NoclipConnection:Disconnect()
+        NoclipConnection = nil
+    end
+    local char = Players.LocalPlayer.Character
+    if char then
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+end
+
 local function StartFly()
     local char = Players.LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -488,27 +518,38 @@ local function StartFly()
     
     if not hum or not hrp then return end
     
-    hum.PlatformStand = true 
+    -- Freeze character and disable animations
+    hum.PlatformStand = true
+    local animator = hum:FindFirstChildOfClass("Animator")
+    if animator then animator.Enabled = false end
     
-    FlyConnection = RunService.Heartbeat:Connect(function()
+    StartNoclip()
+    
+    FlyConnection = RunService.Heartbeat:Connect(function(dt)
         if not FlyEnabled or not char or not char.Parent then
             StopFly()
             return
         end
 
         local cam = workspace.CurrentCamera
+        
+        -- Strictly horizontal camera directions (No flying up/down)
+        local forward = (cam.CFrame.LookVector * Vector3.new(1, 0, 1)).Unit
+        local right = (cam.CFrame.RightVector * Vector3.new(1, 0, 1)).Unit
+        
         local moveDir = Vector3.zero
 
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + forward end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - forward end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - right end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + right end
 
         if moveDir.Magnitude > 0 then
             moveDir = moveDir.Unit
         end
 
-        hrp.AssemblyLinearVelocity = moveDir * FlySpeed
+        -- CFrame movement
+        hrp.CFrame = hrp.CFrame + (moveDir * FlySpeed * dt)
     end)
 end
 
@@ -518,15 +559,16 @@ local function StopFly()
         FlyConnection = nil
     end
     
+    StopNoclip()
+    
     local char = Players.LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
     
     if hum then
         hum.PlatformStand = false
-    end
-    if hrp then
-        hrp.AssemblyLinearVelocity = Vector3.zero
+        -- Re-enable animations
+        local animator = hum:FindFirstChildOfClass("Animator")
+        if animator then animator.Enabled = true end
     end
 end
 
