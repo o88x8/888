@@ -322,11 +322,11 @@ local function CreateGUI()
     local FlyBtn = CreateToggle(cont4)
 
     local c5, cont5 = CreateCard(Pages[3].Page, "Loop Teleport", 2)
-    cont5.Size = UDim2.new(1, 0, 0, 165) -- Increased height slightly to fit everything neatly
+    cont5.Size = UDim2.new(0, 0, 0, 135) -- Perfectly fitted compact height
     
     local PlayerScrollFrame = Instance.new("ScrollingFrame")
-    PlayerScrollFrame.Size = UDim2.new(1, 0, 0, 95)
-    PlayerScrollFrame.Position = UDim2.new(0, 0, 0, 0) -- Start at top of content frame
+    PlayerScrollFrame.Size = UDim2.new(1, 0, 0, 80) -- Reduced height
+    PlayerScrollFrame.Position = UDim2.new(0, 0, 0, 0) 
     PlayerScrollFrame.BackgroundTransparency = 1
     PlayerScrollFrame.BorderSizePixel = 0
     PlayerScrollFrame.ScrollBarThickness = 2
@@ -339,15 +339,14 @@ local function CreateGUI()
     ListLayout.Padding = UDim.new(0, 2)
     ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
-    -- Fixed position so it doesn't escape the grey box
+    -- Tight, safe positioning for button and text
     local TPToggleBtn = CreateToggle(cont5)
-    TPToggleBtn.Position = UDim2.new(1, -100, 0, 105) 
-    TPToggleBtn.Text = "START"
+    TPToggleBtn.Position = UDim2.new(1, -100, 0, 90)
     TPToggleBtn.Size = UDim2.new(0, 100, 0, 24)
 
     local TPStatus = Instance.new("TextLabel")
     TPStatus.Size = UDim2.new(1, -110, 0, 15)
-    TPStatus.Position = UDim2.new(0, 0, 0, 108) -- Aligned nicely next to the button
+    TPStatus.Position = UDim2.new(0, 0, 0, 94)
     TPStatus.BackgroundTransparency = 1
     TPStatus.Text = "Status: Idle"
     TPStatus.TextColor3 = theme.textMuted
