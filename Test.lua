@@ -24,6 +24,12 @@ local FLY_KEY = Enum.KeyCode.G
 local FlyConnection = nil
 local originalCanCollide = {}
 
+-- Lock-On Settings
+local LockOnEnabled = false
+local LockedTarget = nil
+local LockOnConnection = nil
+local LOCK_KEY = Enum.KeyCode.R
+
 local function CreateGUI()
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "ScriptHub"
@@ -37,7 +43,7 @@ local function CreateGUI()
     Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     Frame.BorderSizePixel = 0
     Frame.Position = UDim2.new(0.5, -120, 0.1, 0)
-    Frame.Size = UDim2.new(0, 240, 0, 425) 
+    Frame.Size = UDim2.new(0, 240, 0, 500)
     Frame.ClipsDescendants = false
 
     local MainCorner = Instance.new("UICorner")
@@ -111,10 +117,55 @@ local function CreateGUI()
     Divider.BorderSizePixel = 0
     Divider.Parent = Frame
 
+    -- ===== LOCK-ON SECTION =====
+    local LockTitle = Instance.new("TextLabel")
+    LockTitle.Size = UDim2.new(0.9, 0, 0, 18)
+    LockTitle.Position = UDim2.new(0.05, 0, 0, 105)
+    LockTitle.BackgroundTransparency = 1
+    LockTitle.TextColor3 = Color3.fromRGB(140, 140, 140)
+    LockTitle.Text = "LOCK-ON [R]"
+    LockTitle.Font = Enum.Font.GothamBold
+    LockTitle.TextSize = 10
+    LockTitle.Parent = Frame
+
+    local LockBtn = Instance.new("TextButton")
+    LockBtn.Name = "LockBtn"
+    LockBtn.Size = UDim2.new(0.9, 0, 0, 32)
+    LockBtn.Position = UDim2.new(0.05, 0, 0, 125)
+    LockBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+    LockBtn.BorderSizePixel = 0
+    LockBtn.Font = Enum.Font.GothamBold
+    LockBtn.Text = "Lock-On: OFF"
+    LockBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    LockBtn.TextSize = 13
+    LockBtn.AutoButtonColor = false
+    LockBtn.Parent = Frame
+
+    local LockCorner = Instance.new("UICorner")
+    LockCorner.CornerRadius = UDim.new(0, 6)
+    LockCorner.Parent = LockBtn
+
+    local LockStatus = Instance.new("TextLabel")
+    LockStatus.Size = UDim2.new(0.9, 0, 0, 14)
+    LockStatus.Position = UDim2.new(0.05, 0, 0, 163)
+    LockStatus.BackgroundTransparency = 1
+    LockStatus.TextColor3 = Color3.fromRGB(90, 90, 90)
+    LockStatus.Text = "No target"
+    LockStatus.Font = Enum.Font.Gotham
+    LockStatus.TextSize = 9
+    LockStatus.Parent = Frame
+
+    local Divider1 = Instance.new("Frame")
+    Divider1.Size = UDim2.new(0.85, 0, 0, 1)
+    Divider1.Position = UDim2.new(0.075, 0, 0, 183)
+    Divider1.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    Divider1.BorderSizePixel = 0
+    Divider1.Parent = Frame
+
     -- ===== LOOP TP SECTION =====
     local TPTitle = Instance.new("TextLabel")
     TPTitle.Size = UDim2.new(0.9, 0, 0, 18)
-    TPTitle.Position = UDim2.new(0.05, 0, 0, 105)
+    TPTitle.Position = UDim2.new(0.05, 0, 0, 190)
     TPTitle.BackgroundTransparency = 1
     TPTitle.TextColor3 = Color3.fromRGB(140, 140, 140)
     TPTitle.Text = "LOOP TELEPORT"
@@ -123,8 +174,8 @@ local function CreateGUI()
     TPTitle.Parent = Frame
 
     local ScrollFrame = Instance.new("ScrollingFrame")
-    ScrollFrame.Size = UDim2.new(0.9, 0, 0, 160)
-    ScrollFrame.Position = UDim2.new(0.05, 0, 0, 125)
+    ScrollFrame.Size = UDim2.new(0.9, 0, 0, 140)
+    ScrollFrame.Position = UDim2.new(0.05, 0, 0, 210)
     ScrollFrame.BackgroundTransparency = 1
     ScrollFrame.BorderSizePixel = 0
     ScrollFrame.ScrollBarThickness = 3
@@ -141,7 +192,7 @@ local function CreateGUI()
     local TPToggleBtn = Instance.new("TextButton")
     TPToggleBtn.Name = "TPToggleBtn"
     TPToggleBtn.Size = UDim2.new(0.9, 0, 0, 30)
-    TPToggleBtn.Position = UDim2.new(0.05, 0, 0, 292)
+    TPToggleBtn.Position = UDim2.new(0.05, 0, 0, 357)
     TPToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 130, 50)
     TPToggleBtn.BorderSizePixel = 0
     TPToggleBtn.Font = Enum.Font.GothamBold
@@ -157,7 +208,7 @@ local function CreateGUI()
 
     local TPStatus = Instance.new("TextLabel")
     TPStatus.Size = UDim2.new(0.9, 0, 0, 14)
-    TPStatus.Position = UDim2.new(0.05, 0, 0, 328)
+    TPStatus.Position = UDim2.new(0.05, 0, 0, 393)
     TPStatus.BackgroundTransparency = 1
     TPStatus.TextColor3 = Color3.fromRGB(90, 90, 90)
     TPStatus.Text = "Off"
@@ -167,7 +218,7 @@ local function CreateGUI()
 
     local Divider2 = Instance.new("Frame")
     Divider2.Size = UDim2.new(0.85, 0, 0, 1)
-    Divider2.Position = UDim2.new(0.075, 0, 0, 348)
+    Divider2.Position = UDim2.new(0.075, 0, 0, 413)
     Divider2.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     Divider2.BorderSizePixel = 0
     Divider2.Parent = Frame
@@ -175,7 +226,7 @@ local function CreateGUI()
     -- ===== FLY SECTION =====
     local FlyTitle = Instance.new("TextLabel")
     FlyTitle.Size = UDim2.new(0.9, 0, 0, 18)
-    FlyTitle.Position = UDim2.new(0.05, 0, 0, 355)
+    FlyTitle.Position = UDim2.new(0.05, 0, 0, 420)
     FlyTitle.BackgroundTransparency = 1
     FlyTitle.TextColor3 = Color3.fromRGB(140, 140, 140)
     FlyTitle.Text = "FLY + NOCLIP [G]"
@@ -186,7 +237,7 @@ local function CreateGUI()
     local FlyBtn = Instance.new("TextButton")
     FlyBtn.Name = "FlyBtn"
     FlyBtn.Size = UDim2.new(0.9, 0, 0, 32)
-    FlyBtn.Position = UDim2.new(0.05, 0, 0, 375)
+    FlyBtn.Position = UDim2.new(0.05, 0, 0, 440)
     FlyBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
     FlyBtn.BorderSizePixel = 0
     FlyBtn.Font = Enum.Font.GothamBold
@@ -202,7 +253,7 @@ local function CreateGUI()
 
     local Divider3 = Instance.new("Frame")
     Divider3.Size = UDim2.new(0.85, 0, 0, 1)
-    Divider3.Position = UDim2.new(0.075, 0, 0, 412)
+    Divider3.Position = UDim2.new(0.075, 0, 0, 477)
     Divider3.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     Divider3.BorderSizePixel = 0
     Divider3.Parent = Frame
@@ -253,12 +304,33 @@ local function CreateGUI()
 
     ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 
-    return FastAttackBtn, TPToggleBtn, TPStatus, ScrollFrame, FlyBtn
+    return FastAttackBtn, TPToggleBtn, TPStatus, ScrollFrame, FlyBtn, LockBtn, LockStatus
 end
 
 -- Build GUI
-local FastAttackBtn, TPToggleBtn, TPStatus, PlayerScrollFrame, FlyBtn = CreateGUI()
+local FastAttackBtn, TPToggleBtn, TPStatus, PlayerScrollFrame, FlyBtn, LockBtn, LockStatus = CreateGUI()
 local playerButtons = {}
+
+-- ===== LOCK-ON HIGHLIGHT =====
+local highlightInstance = nil
+
+local function CreateHighlight(targetChar)
+    RemoveHighlight()
+    highlightInstance = Instance.new("Highlight")
+    highlightInstance.Adornee = targetChar
+    highlightInstance.FillColor = Color3.fromRGB(255, 0, 0)
+    highlightInstance.FillTransparency = 0.7
+    highlightInstance.OutlineColor = Color3.fromRGB(255, 50, 50)
+    highlightInstance.OutlineTransparency = 0
+    highlightInstance.Parent = targetChar
+end
+
+local function RemoveHighlight()
+    if highlightInstance then
+        highlightInstance:Destroy()
+        highlightInstance = nil
+    end
+end
 
 -- ===== PLAYER LIST =====
 local function createPlayerButton(player, index)
@@ -362,6 +434,13 @@ Players.PlayerRemoving:Connect(function(player)
         TPToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 130, 50)
         TPStatus.Text = "Player left"
     end
+    if player == LockedTarget then
+        LockedTarget = nil
+        RemoveHighlight()
+        if LockOnEnabled then
+            LockStatus.Text = "Target lost"
+        end
+    end
     refreshPlayerList()
 end)
 refreshPlayerList()
@@ -443,6 +522,131 @@ local function ToggleFastAttack()
 end
 
 FastAttackBtn.MouseButton1Click:Connect(ToggleFastAttack)
+
+-- ===== LOCK-ON LOGIC =====
+local function FindNearestPlayer()
+    local myChar = Players.LocalPlayer.Character
+    local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    if not myHRP then return nil end
+
+    local nearest = nil
+    local shortestDist = math.huge
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer and player.Character then
+            local humanoid = player.Character:FindFirstChild("Humanoid")
+            local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+            if humanoid and hrp and humanoid.Health > 0 then
+                local dist = (hrp.Position - myHRP.Position).Magnitude
+                if dist < shortestDist then
+                    shortestDist = dist
+                    nearest = player
+                end
+            end
+        end
+    end
+
+    return nearest
+end
+
+local function AttackLockedTarget()
+    pcall(function()
+        if not LockedTarget or not LockedTarget.Character then return end
+        local targetChar = LockedTarget.Character
+        local head = targetChar:FindFirstChild("Head")
+        local humanoid = targetChar:FindFirstChild("Humanoid")
+        if not head or not humanoid or humanoid.Health <= 0 then
+            LockedTarget = nil
+            RemoveHighlight()
+            LockStatus.Text = "Target died"
+            return
+        end
+        RegisterAttack:FireServer(0)
+        RegisterHit:FireServer(head, {{targetChar, head}})
+    end)
+end
+
+local function StartLockOn()
+    local nearest = FindNearestPlayer()
+    if not nearest then
+        LockStatus.Text = "No players found"
+        return
+    end
+
+    LockedTarget = nearest
+    LockStatus.Text = "Locked: " .. nearest.DisplayName
+    if nearest.Character then
+        CreateHighlight(nearest.Character)
+    end
+
+    if LockOnConnection then LockOnConnection:Disconnect() end
+
+    LockOnConnection = RunService.Heartbeat:Connect(function()
+        if not LockOnEnabled then return end
+
+        -- Check if target is still valid
+        if not LockedTarget or not LockedTarget.Character then
+            LockedTarget = nil
+            RemoveHighlight()
+            LockStatus.Text = "Target lost"
+            return
+        end
+
+        local targetChar = LockedTarget.Character
+        local targetHum = targetChar:FindFirstChild("Humanoid")
+        local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+
+        if not targetHum or not targetHRP or targetHum.Health <= 0 then
+            LockedTarget = nil
+            RemoveHighlight()
+            LockStatus.Text = "Target died"
+            return
+        end
+
+        -- Keep highlight on target
+        if not highlightInstance or not highlightInstance.Parent then
+            CreateHighlight(targetChar)
+        end
+
+        -- Lock camera onto target
+        local myChar = Players.LocalPlayer.Character
+        local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+        if myHRP then
+            local cam = workspace.CurrentCamera
+            local lookAt = targetHRP.Position
+            local camPos = myHRP.Position
+            cam.CFrame = CFrame.new(camPos, lookAt)
+        end
+
+        -- 100% hit rate - attack constantly
+        AttackLockedTarget()
+    end)
+end
+
+local function StopLockOn()
+    if LockOnConnection then
+        LockOnConnection:Disconnect()
+        LockOnConnection = nil
+    end
+    LockedTarget = nil
+    RemoveHighlight()
+    LockStatus.Text = "No target"
+end
+
+local function ToggleLockOn()
+    LockOnEnabled = not LockOnEnabled
+    if LockOnEnabled then
+        LockBtn.Text = "Lock-On: ON"
+        LockBtn.BackgroundColor3 = Color3.fromRGB(60, 255, 60)
+        StartLockOn()
+    else
+        LockBtn.Text = "Lock-On: OFF"
+        LockBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+        StopLockOn()
+    end
+end
+
+LockBtn.MouseButton1Click:Connect(ToggleLockOn)
 
 -- ===== LOOP TP LOGIC =====
 TPToggleBtn.MouseButton1Click:Connect(function()
@@ -526,7 +730,6 @@ local function StartFly()
             return
         end
 
-        -- Maintain noclip continuously
         MaintainNoclip(char)
 
         local cam = workspace.CurrentCamera
@@ -590,6 +793,9 @@ UserInputService.InputBegan:Connect(function(input, gpe)
     if input.KeyCode == FLY_KEY then
         ToggleFly()
     end
+    if input.KeyCode == LOCK_KEY then
+        ToggleLockOn()
+    end
     if input.KeyCode == Enum.KeyCode.T and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
         local gui = FastAttackBtn:FindFirstAncestorOfClass("ScreenGui")
         if gui then gui.Enabled = not gui.Enabled end
@@ -601,5 +807,6 @@ print("Script Hub Loaded!")
 print("Made by sardo")
 print("U = Toggle Fast Attack")
 print("G = Toggle Fly + Noclip")
+print("R = Toggle Lock-On (100% Hit)")
 print("Ctrl+T = Hide/Show GUI")
 print("=================================")
