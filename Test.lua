@@ -501,14 +501,17 @@ local function StopNoclip()
         NoclipConnection:Disconnect()
         NoclipConnection = nil
     end
-    local char = Players.LocalPlayer.Character
-    if char then
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = true
+    -- Wait a tiny bit before turning collision back on so you don't get stuck in walls
+    task.delay(0.2, function()
+        local char = Players.LocalPlayer.Character
+        if char then
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
             end
         end
-    end
+    end)
 end
 
 local function StartFly()
@@ -526,16 +529,25 @@ local function StartFly()
     StartNoclip()
     
     FlyConnection = RunService.Heartbeat:Connect(function(dt)
-        if not FlyEnabled or not char or not char.Parent then
+        -- Safety checks
+        if not FlyEnabled or not char or not char.Parent or not hrp or not hrp.Parent then
             StopFly()
             return
         end
 
+        -- CRITICAL: Zero out physics velocity so gravity doesn't pull you down
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
+
         local cam = workspace.CurrentCamera
         
-        -- Strictly horizontal camera directions (No flying up/down)
-        local forward = (cam.CFrame.LookVector * Vector3.new(1, 0, 1)).Unit
-        local right = (cam.CFrame.RightVector * Vector3.new(1, 0, 1)).Unit
+        -- Strictly horizontal camera directions
+        local forward = cam.CFrame.LookVector * Vector3.new(1, 0, 1)
+        -- Prevent NaN crash if looking perfectly straight up/down
+        if forward.Magnitude > 0 then forward = forward.Unit else forward = Vector3.new(0, 0, -1) end
+        
+        local right = cam.CFrame.RightVector * Vector3.new(1, 0, 1)
+        if right.Magnitude > 0 then right = right.Unit else right = Vector3.new(1, 0, 0) end
         
         local moveDir = Vector3.zero
 
@@ -544,11 +556,12 @@ local function StartFly()
         if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - right end
         if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + right end
 
+        -- Normalize movement so diagonal isn't faster
         if moveDir.Magnitude > 0 then
             moveDir = moveDir.Unit
         end
 
-        -- CFrame movement
+        -- Apply CFrame movement
         hrp.CFrame = hrp.CFrame + (moveDir * FlySpeed * dt)
     end)
 end
@@ -563,12 +576,16 @@ local function StopFly()
     
     local char = Players.LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
     
     if hum then
         hum.PlatformStand = false
         -- Re-enable animations
         local animator = hum:FindFirstChildOfClass("Animator")
         if animator then animator.Enabled = true end
+    end
+    if hrp then
+        hrp.AssemblyLinearVelocity = Vector3.zero
     end
 end
 
