@@ -582,7 +582,6 @@ FlyBtn.MouseButton1Click:Connect(ToggleFly)
 
 -- ===== HOLD R TO MOVE MOUSE ONTO NEAREST PLAYER =====
 RunService.Heartbeat:Connect(function()
-    -- Don't move mouse if typing in chat
     if UserInputService:GetFocusedTextBox() then return end
 
     if UserInputService:IsKeyDown(Enum.KeyCode.R) then
@@ -608,14 +607,25 @@ RunService.Heartbeat:Connect(function()
         end
 
         if nearest and nearest.Character then
-            -- Aim slightly above the HumanoidRootPart to target the body better
             local targetPart = nearest.Character:FindFirstChild("Head") or nearest.Character:FindFirstChild("HumanoidRootPart")
             if targetPart then
-                -- Convert their 3D world position to 2D screen coordinates
-                local screenPos, onScreen = workspace.CurrentCamera:WorldToScreenPoint(targetPart.Position)
-                if onScreen then
-                    -- Physically move the actual mouse cursor to those screen coordinates
-                    UserInputService:SetMouseLocation(screenPos.X, screenPos.Y)
+                local cam = workspace.CurrentCamera
+                local screenPos, onScreen = cam:WorldToScreenPoint(targetPart.Position)
+                local viewportSize = cam.ViewportSize
+                
+                -- If Z > 0, the player is in front of the camera
+                if screenPos.Z > 0 then
+                    -- Clamp coordinates with a 20px margin so the mouse NEVER gets stuck on the screen edges
+                    local clampedX = math.clamp(screenPos.X, 20, viewportSize.X - 20)
+                    local clampedY = math.clamp(screenPos.Y, 20, viewportSize.Y - 20)
+                    
+                    -- Move the actual mouse to the player
+                    UserInputService:SetMouseLocation(clampedX, clampedY)
+                else
+                    -- If the player is BEHIND you, the mouse physically cannot reach them.
+                    -- We smoothly nudge the camera just enough to bring them on screen so the mouse can lock on.
+                    local lookAt = CFrame.new(cam.CFrame.Position, targetPart.Position)
+                    cam.CFrame = cam.CFrame:Lerp(lookAt, 0.15)
                 end
             end
         end
