@@ -24,6 +24,11 @@ local FLY_KEY = Enum.KeyCode.G
 local FlyConnection = nil
 local originalCanCollide = {}
 
+-- ESP Settings
+local ESPEnabled = false
+local ESPConnection = nil
+local ESPObjects = {}
+
 local function CreateGUI()
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "ScriptHub"
@@ -37,7 +42,7 @@ local function CreateGUI()
     Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     Frame.BorderSizePixel = 0
     Frame.Position = UDim2.new(0.5, -120, 0.1, 0)
-    Frame.Size = UDim2.new(0, 240, 0, 425) 
+    Frame.Size = UDim2.new(0, 240, 0, 485) 
     Frame.ClipsDescendants = false
 
     local MainCorner = Instance.new("UICorner")
@@ -111,10 +116,45 @@ local function CreateGUI()
     Divider.BorderSizePixel = 0
     Divider.Parent = Frame
 
+    -- ===== ESP SECTION =====
+    local ESPTitle = Instance.new("TextLabel")
+    ESPTitle.Size = UDim2.new(0.9, 0, 0, 18)
+    ESPTitle.Position = UDim2.new(0.05, 0, 0, 105)
+    ESPTitle.BackgroundTransparency = 1
+    ESPTitle.TextColor3 = Color3.fromRGB(140, 140, 140)
+    ESPTitle.Text = "ESP"
+    ESPTitle.Font = Enum.Font.GothamBold
+    ESPTitle.TextSize = 10
+    ESPTitle.Parent = Frame
+
+    local ESPBtn = Instance.new("TextButton")
+    ESPBtn.Name = "ESPBtn"
+    ESPBtn.Size = UDim2.new(0.9, 0, 0, 32)
+    ESPBtn.Position = UDim2.new(0.05, 0, 0, 125)
+    ESPBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+    ESPBtn.BorderSizePixel = 0
+    ESPBtn.Font = Enum.Font.GothamBold
+    ESPBtn.Text = "ESP: OFF"
+    ESPBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ESPBtn.TextSize = 13
+    ESPBtn.AutoButtonColor = false
+    ESPBtn.Parent = Frame
+
+    local ESPCorner = Instance.new("UICorner")
+    ESPCorner.CornerRadius = UDim.new(0, 6)
+    ESPCorner.Parent = ESPBtn
+
+    local Divider1_5 = Instance.new("Frame")
+    Divider1_5.Size = UDim2.new(0.85, 0, 0, 1)
+    Divider1_5.Position = UDim2.new(0.075, 0, 0, 165)
+    Divider1_5.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    Divider1_5.BorderSizePixel = 0
+    Divider1_5.Parent = Frame
+
     -- ===== LOOP TP SECTION =====
     local TPTitle = Instance.new("TextLabel")
     TPTitle.Size = UDim2.new(0.9, 0, 0, 18)
-    TPTitle.Position = UDim2.new(0.05, 0, 0, 105)
+    TPTitle.Position = UDim2.new(0.05, 0, 0, 172)
     TPTitle.BackgroundTransparency = 1
     TPTitle.TextColor3 = Color3.fromRGB(140, 140, 140)
     TPTitle.Text = "LOOP TELEPORT"
@@ -123,8 +163,8 @@ local function CreateGUI()
     TPTitle.Parent = Frame
 
     local ScrollFrame = Instance.new("ScrollingFrame")
-    ScrollFrame.Size = UDim2.new(0.9, 0, 0, 160)
-    ScrollFrame.Position = UDim2.new(0.05, 0, 0, 125)
+    ScrollFrame.Size = UDim2.new(0.9, 0, 0, 140)
+    ScrollFrame.Position = UDim2.new(0.05, 0, 0, 192)
     ScrollFrame.BackgroundTransparency = 1
     ScrollFrame.BorderSizePixel = 0
     ScrollFrame.ScrollBarThickness = 3
@@ -141,7 +181,7 @@ local function CreateGUI()
     local TPToggleBtn = Instance.new("TextButton")
     TPToggleBtn.Name = "TPToggleBtn"
     TPToggleBtn.Size = UDim2.new(0.9, 0, 0, 30)
-    TPToggleBtn.Position = UDim2.new(0.05, 0, 0, 292)
+    TPToggleBtn.Position = UDim2.new(0.05, 0, 0, 339)
     TPToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 130, 50)
     TPToggleBtn.BorderSizePixel = 0
     TPToggleBtn.Font = Enum.Font.GothamBold
@@ -157,7 +197,7 @@ local function CreateGUI()
 
     local TPStatus = Instance.new("TextLabel")
     TPStatus.Size = UDim2.new(0.9, 0, 0, 14)
-    TPStatus.Position = UDim2.new(0.05, 0, 0, 328)
+    TPStatus.Position = UDim2.new(0.05, 0, 0, 375)
     TPStatus.BackgroundTransparency = 1
     TPStatus.TextColor3 = Color3.fromRGB(90, 90, 90)
     TPStatus.Text = "Off"
@@ -167,7 +207,7 @@ local function CreateGUI()
 
     local Divider2 = Instance.new("Frame")
     Divider2.Size = UDim2.new(0.85, 0, 0, 1)
-    Divider2.Position = UDim2.new(0.075, 0, 0, 348)
+    Divider2.Position = UDim2.new(0.075, 0, 0, 395)
     Divider2.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     Divider2.BorderSizePixel = 0
     Divider2.Parent = Frame
@@ -175,7 +215,7 @@ local function CreateGUI()
     -- ===== FLY SECTION =====
     local FlyTitle = Instance.new("TextLabel")
     FlyTitle.Size = UDim2.new(0.9, 0, 0, 18)
-    FlyTitle.Position = UDim2.new(0.05, 0, 0, 355)
+    FlyTitle.Position = UDim2.new(0.05, 0, 0, 402)
     FlyTitle.BackgroundTransparency = 1
     FlyTitle.TextColor3 = Color3.fromRGB(140, 140, 140)
     FlyTitle.Text = "FLY + NOCLIP [G]"
@@ -186,7 +226,7 @@ local function CreateGUI()
     local FlyBtn = Instance.new("TextButton")
     FlyBtn.Name = "FlyBtn"
     FlyBtn.Size = UDim2.new(0.9, 0, 0, 32)
-    FlyBtn.Position = UDim2.new(0.05, 0, 0, 375)
+    FlyBtn.Position = UDim2.new(0.05, 0, 0, 422)
     FlyBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
     FlyBtn.BorderSizePixel = 0
     FlyBtn.Font = Enum.Font.GothamBold
@@ -202,7 +242,7 @@ local function CreateGUI()
 
     local Divider3 = Instance.new("Frame")
     Divider3.Size = UDim2.new(0.85, 0, 0, 1)
-    Divider3.Position = UDim2.new(0.075, 0, 0, 412)
+    Divider3.Position = UDim2.new(0.075, 0, 0, 459)
     Divider3.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     Divider3.BorderSizePixel = 0
     Divider3.Parent = Frame
@@ -253,11 +293,11 @@ local function CreateGUI()
 
     ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 
-    return FastAttackBtn, TPToggleBtn, TPStatus, ScrollFrame, FlyBtn
+    return FastAttackBtn, TPToggleBtn, TPStatus, ScrollFrame, FlyBtn, ESPBtn
 end
 
 -- Build GUI
-local FastAttackBtn, TPToggleBtn, TPStatus, PlayerScrollFrame, FlyBtn = CreateGUI()
+local FastAttackBtn, TPToggleBtn, TPStatus, PlayerScrollFrame, FlyBtn, ESPBtn = CreateGUI()
 local playerButtons = {}
 
 -- ===== PLAYER LIST =====
@@ -362,6 +402,11 @@ Players.PlayerRemoving:Connect(function(player)
         TPToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 130, 50)
         TPStatus.Text = "Player left"
     end
+    -- Cleanup ESP if player leaves
+    if ESPObjects[player] then
+        if ESPObjects[player].Parent then ESPObjects[player].Parent:Destroy() end
+        ESPObjects[player] = nil
+    end
     refreshPlayerList()
 end)
 refreshPlayerList()
@@ -443,6 +488,89 @@ local function ToggleFastAttack()
 end
 
 FastAttackBtn.MouseButton1Click:Connect(ToggleFastAttack)
+
+-- ===== ESP LOGIC =====
+local function ClearESP()
+    for _, obj in pairs(ESPObjects) do
+        if obj and obj.Parent then
+            obj.Parent:Destroy()
+        end
+    end
+    ESPObjects = {}
+end
+
+local function UpdateESP()
+    local myChar = Players.LocalPlayer.Character
+    local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    if not myHRP then return end
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer then
+            local char = player.Character
+            local head = char and char:FindFirstChild("Head")
+            local hum = char and char:FindFirstChild("Humanoid")
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+            if head and hum and hrp and hum.Health > 0 then
+                local dist = math.floor((hrp.Position - myHRP.Position).Magnitude)
+                local health = math.floor(hum.Health)
+
+                if not ESPObjects[player] then
+                    local bb = Instance.new("BillboardGui")
+                    bb.Adornee = head
+                    bb.Size = UDim2.new(0, 150, 0, 50)
+                    bb.StudsOffset = Vector3.new(0, 3, 0)
+                    bb.AlwaysOnTop = true
+                    bb.Parent = head
+
+                    local label = Instance.new("TextLabel")
+                    label.Size = UDim2.new(1, 0, 1, 0)
+                    label.BackgroundTransparency = 1
+                    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    label.TextStrokeTransparency = 0.5
+                    label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+                    label.Font = Enum.Font.GothamBold
+                    label.TextSize = 12
+                    label.TextScaled = true
+                    label.Text = player.DisplayName .. "\nHP: " .. health .. " | Dist: " .. dist
+                    label.Parent = bb
+
+                    ESPObjects[player] = label
+                else
+                    -- Update existing ESP
+                    ESPObjects[player].Text = player.DisplayName .. "\nHP: " .. health .. " | Dist: " .. dist
+                    ESPObjects[player].Parent.Adornee = head
+                end
+            else
+                -- Remove ESP if dead or character doesn't exist
+                if ESPObjects[player] then
+                    if ESPObjects[player].Parent then ESPObjects[player].Parent:Destroy() end
+                    ESPObjects[player] = nil
+                end
+            end
+        end
+    end
+end
+
+local function ToggleESP()
+    ESPEnabled = not ESPEnabled
+    if ESPEnabled then
+        ESPBtn.Text = "ESP: ON"
+        ESPBtn.BackgroundColor3 = Color3.fromRGB(60, 255, 60)
+        if ESPConnection then ESPConnection:Disconnect() end
+        ESPConnection = RunService.RenderStepped:Connect(UpdateESP)
+    else
+        ESPBtn.Text = "ESP: OFF"
+        ESPBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+        if ESPConnection then
+            ESPConnection:Disconnect()
+            ESPConnection = nil
+        end
+        ClearESP()
+    end
+end
+
+ESPBtn.MouseButton1Click:Connect(ToggleESP)
 
 -- ===== LOOP TP LOGIC =====
 TPToggleBtn.MouseButton1Click:Connect(function()
