@@ -1,0 +1,128 @@
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- === DEINE PANDA AUTH URL HIER EINTRAGEN ===
+local API_URL = "HIER_DEINE_PANDA_AUTH_API_URL_EINTRAGEN" 
+-- ============================================
+
+-- === GUI ERSTELLEN ===
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "PandaAuthGUI"
+screenGui.ResetOnSpawn = false -- Bleibt beim Respawn stehen
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 300, 0, 200)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -100) -- Zentriert
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.Parent = screenGui
+
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 12)
+uiCorner.Parent = mainFrame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 40)
+titleLabel.BackgroundTransparency = 1
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Text = "Panda Auth - Key Check"
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 18
+titleLabel.Parent = mainFrame
+
+local inputBox = Instance.new("TextBox")
+inputBox.Size = UDim2.new(0.8, 0, 0, 40)
+inputBox.Position = UDim2.new(0.1, 0, 0.3, 0)
+inputBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+inputBox.PlaceholderText = "Key hier eingeben..."
+inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+inputBox.Font = Enum.Font.Gotham
+inputBox.TextSize = 14
+inputBox.ClearTextOnFocus = false
+inputBox.Parent = mainFrame
+
+local inputCorner = Instance.new("UICorner")
+inputCorner.CornerRadius = UDim.new(0, 6)
+inputCorner.Parent = inputBox
+
+local checkButton = Instance.new("TextButton")
+checkButton.Size = UDim2.new(0.8, 0, 0, 40)
+checkButton.Position = UDim2.new(0.1, 0, 0.6, 0)
+checkButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+checkButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+checkButton.Text = "Key Prüfen"
+checkButton.Font = Enum.Font.GothamBold
+checkButton.TextSize = 16
+checkButton.Parent = mainFrame
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 6)
+btnCorner.Parent = checkButton
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(0.9, 0, 0, 30)
+statusLabel.Position = UDim2.new(0.05, 0, 0.85, 0)
+statusLabel.BackgroundTransparency = 1
+statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+statusLabel.Text = "Warte auf Eingabe..."
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 12
+statusLabel.TextWrapped = true
+statusLabel.Parent = mainFrame
+-- === GUI ERSTELLUNG ENDE ===
+
+
+-- === LOGIK ZUM PRÜFEN ===
+checkButton.MouseButton1Click:Connect(function()
+    local inputKey = inputBox.Text
+
+    -- Prüfen ob das Feld leer ist
+    if inputKey == "" or inputKey == "Key hier eingeben..." then
+        statusLabel.Text = "Bitte gib zuerst einen Key ein!"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        return
+    end
+
+    -- UI aktualisieren (Laden)
+    statusLabel.Text = "Überprüfe Key..."
+    statusLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
+    checkButton.Enabled = false -- Button deaktivieren während ladet
+
+    -- HTTP Request an Panda Auth
+    local success, response = pcall(function()
+        local body = HttpService:JSONEncode({ key = inputKey })
+        return HttpService:PostAsync(API_URL, body, Enum.HttpContentType.ApplicationJson)
+    end)
+
+    -- Auswerten der Antwort
+    if success then
+        local decodeSuccess, data = pcall(function()
+            return HttpService:JSONDecode(response)
+        end)
+
+        if decodeSuccess then
+            -- HIER MUSST DU GGF. ETWAS ANPASSEN:
+            -- Panda Auth sendet meistens "success: true" oder "valid: true". 
+            -- Schau in die Doku von Panda Auth, wie das Feld genau heißt!
+            if data.success == true then 
+                statusLabel.Text = "✅ Key ist gültig!"
+                statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+            else
+                statusLabel.Text = "❌ Key ist ungültig oder abgelaufen!"
+                statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+            end
+        else
+            statusLabel.Text = "Fehler beim Lesen der API Antwort."
+            statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        end
+    else
+        -- Wenn die Verbindung komplett fehlschlägt (z.B. falsche URL, keine Internetverbindung)
+        statusLabel.Text = "Verbindungsfehler: " .. tostring(response)
+        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    end
+
+    -- Button wieder aktivieren
+    checkButton.Enabled = true
+end)
