@@ -580,9 +580,9 @@ end
 
 FlyBtn.MouseButton1Click:Connect(ToggleFly)
 
--- ===== HOLD R TO AIM AT NEAREST PLAYER =====
+-- ===== HOLD R TO MOVE MOUSE ONTO NEAREST PLAYER =====
 RunService.Heartbeat:Connect(function()
-    -- Don't snap camera if typing in chat
+    -- Don't move mouse if typing in chat
     if UserInputService:GetFocusedTextBox() then return end
 
     if UserInputService:IsKeyDown(Enum.KeyCode.R) then
@@ -608,10 +608,15 @@ RunService.Heartbeat:Connect(function()
         end
 
         if nearest and nearest.Character then
-            local targetHRP = nearest.Character:FindFirstChild("HumanoidRootPart")
-            if targetHRP then
-                -- Snap camera directly onto the player so the game's built in R works instantly
-                workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, targetHRP.Position)
+            -- Aim slightly above the HumanoidRootPart to target the body better
+            local targetPart = nearest.Character:FindFirstChild("Head") or nearest.Character:FindFirstChild("HumanoidRootPart")
+            if targetPart then
+                -- Convert their 3D world position to 2D screen coordinates
+                local screenPos, onScreen = workspace.CurrentCamera:WorldToScreenPoint(targetPart.Position)
+                if onScreen then
+                    -- Physically move the actual mouse cursor to those screen coordinates
+                    UserInputService:SetMouseLocation(screenPos.X, screenPos.Y)
+                end
             end
         end
     end
@@ -637,6 +642,6 @@ print("Script Hub Loaded!")
 print("Made by sardo")
 print("U = Toggle Fast Attack")
 print("G = Toggle Fly + Noclip")
-print("Hold R = Snap camera to nearest")
+print("Hold R = Snap mouse to nearest")
 print("Ctrl+T = Hide/Show GUI")
 print("=================================")
