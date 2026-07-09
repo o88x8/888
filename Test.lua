@@ -22,7 +22,6 @@ local FlyEnabled = false
 local FlySpeed = 150
 local FLY_KEY = Enum.KeyCode.G
 local FlyConnection = nil
-local NoclipConnection = nil
 
 local function CreateGUI()
     local ScreenGui = Instance.new("ScreenGui")
@@ -481,40 +480,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- ===== NOCLIP LOGIC =====
-local function StartNoclip()
-    if NoclipConnection then return end
-    NoclipConnection = RunService.Stepped:Connect(function()
-        local char = Players.LocalPlayer.Character
-        if char then
-            for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
-                end
-            end
-        end
-    end)
-end
-
-local function StopNoclip()
-    if NoclipConnection then
-        NoclipConnection:Disconnect()
-        NoclipConnection = nil
-    end
-    -- Wait a tiny bit before turning collision back on so you don't get stuck in walls
-    task.delay(0.2, function()
-        local char = Players.LocalPlayer.Character
-        if char then
-            for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
-            end
-        end
-    end)
-end
-
--- ===== FLY LOGIC (REVERTED TO VELOCITY + NOCLIP + NO ANIMATIONS) =====
+-- ===== CLEAN FLY LOGIC =====
 local function StartFly()
     local char = Players.LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -522,16 +488,9 @@ local function StartFly()
     
     if not hum or not hrp then return end
     
-    -- Freeze character and disable animations
-    hum.PlatformStand = true
-    local animator = hum:FindFirstChildOfClass("Animator")
-    if animator then animator.Enabled = false end
-    
-    -- Enable Noclip so you don't get stuck on parts
-    StartNoclip()
+    hum.PlatformStand = true 
     
     FlyConnection = RunService.Heartbeat:Connect(function()
-        -- Safety checks
         if not FlyEnabled or not char or not char.Parent then
             StopFly()
             return
@@ -549,7 +508,6 @@ local function StartFly()
             moveDir = moveDir.Unit
         end
 
-        -- Apply the velocity (Old working method)
         hrp.AssemblyLinearVelocity = moveDir * FlySpeed
     end)
 end
@@ -560,17 +518,12 @@ local function StopFly()
         FlyConnection = nil
     end
     
-    StopNoclip()
-    
     local char = Players.LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     
     if hum then
         hum.PlatformStand = false
-        -- Re-enable animations
-        local animator = hum:FindFirstChildOfClass("Animator")
-        if animator then animator.Enabled = true end
     end
     if hrp then
         hrp.AssemblyLinearVelocity = Vector3.zero
