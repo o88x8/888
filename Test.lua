@@ -19,7 +19,7 @@ local teleportCooldown = 0.1
 
 -- Fly Settings
 local FlyEnabled = false
-local FlySpeed = 150 -- Increased speed
+local FlySpeed = 150
 local FLY_KEY = Enum.KeyCode.G
 local FlyConnection = nil
 
@@ -29,7 +29,7 @@ local function CreateGUI()
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-    -- Main Frame (Fixed height to look compact)
+    -- Main Frame
     local Frame = Instance.new("Frame")
     Frame.Name = "MainFrame"
     Frame.Parent = ScreenGui
@@ -121,7 +121,6 @@ local function CreateGUI()
     TPTitle.TextSize = 10
     TPTitle.Parent = Frame
 
-    -- Scrollable Player List (Shrunk slightly to fit fly button cleanly)
     local ScrollFrame = Instance.new("ScrollingFrame")
     ScrollFrame.Size = UDim2.new(0.9, 0, 0, 160)
     ScrollFrame.Position = UDim2.new(0.05, 0, 0, 125)
@@ -138,7 +137,6 @@ local function CreateGUI()
     ListLayout.Padding = UDim.new(0, 2)
     ListLayout.Parent = ScrollFrame
 
-    -- TP Toggle Button
     local TPToggleBtn = Instance.new("TextButton")
     TPToggleBtn.Name = "TPToggleBtn"
     TPToggleBtn.Size = UDim2.new(0.9, 0, 0, 30)
@@ -156,7 +154,6 @@ local function CreateGUI()
     TPCorner.CornerRadius = UDim.new(0, 6)
     TPCorner.Parent = TPToggleBtn
 
-    -- TP Status
     local TPStatus = Instance.new("TextLabel")
     TPStatus.Size = UDim2.new(0.9, 0, 0, 14)
     TPStatus.Position = UDim2.new(0.05, 0, 0, 328)
@@ -167,7 +164,6 @@ local function CreateGUI()
     TPStatus.TextSize = 9
     TPStatus.Parent = Frame
 
-    -- Divider before Fly section
     local Divider2 = Instance.new("Frame")
     Divider2.Size = UDim2.new(0.85, 0, 0, 1)
     Divider2.Position = UDim2.new(0.075, 0, 0, 348)
@@ -203,7 +199,6 @@ local function CreateGUI()
     FlyCorner.CornerRadius = UDim.new(0, 6)
     FlyCorner.Parent = FlyBtn
 
-    -- Divider before credit
     local Divider3 = Instance.new("Frame")
     Divider3.Size = UDim2.new(0.85, 0, 0, 1)
     Divider3.Position = UDim2.new(0.075, 0, 0, 412)
@@ -211,7 +206,6 @@ local function CreateGUI()
     Divider3.BorderSizePixel = 0
     Divider3.Parent = Frame
 
-    -- Credit
     local Credit = Instance.new("TextLabel")
     Credit.Size = UDim2.new(1, 0, 0, 13)
     Credit.Position = UDim2.new(0, 0, 1, -13)
@@ -509,8 +503,6 @@ local function StartFly()
         if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0,1,0) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0,1,0) end
 
         if moveDir.Magnitude > 0 then
             moveDir = moveDir.Unit
