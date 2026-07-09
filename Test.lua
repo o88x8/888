@@ -19,7 +19,7 @@ local teleportCooldown = 0.1
 
 -- Fly Settings
 local FlyEnabled = false
-local FlySpeed = 50
+local FlySpeed = 150 -- Increased speed
 local FLY_KEY = Enum.KeyCode.G
 local FlyConnection = nil
 
@@ -29,14 +29,14 @@ local function CreateGUI()
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-    -- Main Frame (made taller to fit fly button)
+    -- Main Frame (Fixed height to look compact)
     local Frame = Instance.new("Frame")
     Frame.Name = "MainFrame"
     Frame.Parent = ScreenGui
     Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     Frame.BorderSizePixel = 0
     Frame.Position = UDim2.new(0.5, -120, 0.1, 0)
-    Frame.Size = UDim2.new(0, 240, 0, 465) -- Increased height
+    Frame.Size = UDim2.new(0, 240, 0, 425) 
     Frame.ClipsDescendants = false
 
     local MainCorner = Instance.new("UICorner")
@@ -103,7 +103,6 @@ local function CreateGUI()
     FACorner.CornerRadius = UDim.new(0, 6)
     FACorner.Parent = FastAttackBtn
 
-    -- Divider
     local Divider = Instance.new("Frame")
     Divider.Size = UDim2.new(0.85, 0, 0, 1)
     Divider.Position = UDim2.new(0.075, 0, 0, 98)
@@ -122,9 +121,9 @@ local function CreateGUI()
     TPTitle.TextSize = 10
     TPTitle.Parent = Frame
 
-    -- Scrollable Player List
+    -- Scrollable Player List (Shrunk slightly to fit fly button cleanly)
     local ScrollFrame = Instance.new("ScrollingFrame")
-    ScrollFrame.Size = UDim2.new(0.9, 0, 0, 200)
+    ScrollFrame.Size = UDim2.new(0.9, 0, 0, 160)
     ScrollFrame.Position = UDim2.new(0.05, 0, 0, 125)
     ScrollFrame.BackgroundTransparency = 1
     ScrollFrame.BorderSizePixel = 0
@@ -143,7 +142,7 @@ local function CreateGUI()
     local TPToggleBtn = Instance.new("TextButton")
     TPToggleBtn.Name = "TPToggleBtn"
     TPToggleBtn.Size = UDim2.new(0.9, 0, 0, 30)
-    TPToggleBtn.Position = UDim2.new(0.05, 0, 0, 332)
+    TPToggleBtn.Position = UDim2.new(0.05, 0, 0, 292)
     TPToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 130, 50)
     TPToggleBtn.BorderSizePixel = 0
     TPToggleBtn.Font = Enum.Font.GothamBold
@@ -160,7 +159,7 @@ local function CreateGUI()
     -- TP Status
     local TPStatus = Instance.new("TextLabel")
     TPStatus.Size = UDim2.new(0.9, 0, 0, 14)
-    TPStatus.Position = UDim2.new(0.05, 0, 0, 368) -- Adjusted Y
+    TPStatus.Position = UDim2.new(0.05, 0, 0, 328)
     TPStatus.BackgroundTransparency = 1
     TPStatus.TextColor3 = Color3.fromRGB(90, 90, 90)
     TPStatus.Text = "Off"
@@ -171,7 +170,7 @@ local function CreateGUI()
     -- Divider before Fly section
     local Divider2 = Instance.new("Frame")
     Divider2.Size = UDim2.new(0.85, 0, 0, 1)
-    Divider2.Position = UDim2.new(0.075, 0, 0, 390) -- Adjusted Y
+    Divider2.Position = UDim2.new(0.075, 0, 0, 348)
     Divider2.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     Divider2.BorderSizePixel = 0
     Divider2.Parent = Frame
@@ -179,7 +178,7 @@ local function CreateGUI()
     -- ===== FLY SECTION =====
     local FlyTitle = Instance.new("TextLabel")
     FlyTitle.Size = UDim2.new(0.9, 0, 0, 18)
-    FlyTitle.Position = UDim2.new(0.05, 0, 0, 397) -- New Section
+    FlyTitle.Position = UDim2.new(0.05, 0, 0, 355)
     FlyTitle.BackgroundTransparency = 1
     FlyTitle.TextColor3 = Color3.fromRGB(140, 140, 140)
     FlyTitle.Text = "FLY [G]"
@@ -190,7 +189,7 @@ local function CreateGUI()
     local FlyBtn = Instance.new("TextButton")
     FlyBtn.Name = "FlyBtn"
     FlyBtn.Size = UDim2.new(0.9, 0, 0, 32)
-    FlyBtn.Position = UDim2.new(0.05, 0, 0, 417) -- New Button
+    FlyBtn.Position = UDim2.new(0.05, 0, 0, 375)
     FlyBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
     FlyBtn.BorderSizePixel = 0
     FlyBtn.Font = Enum.Font.GothamBold
@@ -207,15 +206,15 @@ local function CreateGUI()
     -- Divider before credit
     local Divider3 = Instance.new("Frame")
     Divider3.Size = UDim2.new(0.85, 0, 0, 1)
-    Divider3.Position = UDim2.new(0.075, 0, 0, 435) -- Adjusted Y
+    Divider3.Position = UDim2.new(0.075, 0, 0, 412)
     Divider3.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     Divider3.BorderSizePixel = 0
     Divider3.Parent = Frame
 
     -- Credit
     local Credit = Instance.new("TextLabel")
-    Credit.Size = UDim2.new(1, 0, 0, 20)
-    Credit.Position = UDim2.new(0, 0, 1, -20)
+    Credit.Size = UDim2.new(1, 0, 0, 13)
+    Credit.Position = UDim2.new(0, 0, 1, -13)
     Credit.BackgroundTransparency = 1
     Credit.TextColor3 = Color3.fromRGB(60, 60, 60)
     Credit.Text = "Made by Sardo"
@@ -495,11 +494,9 @@ local function StartFly()
     
     if not hum or not hrp then return end
     
-    -- PlatformStand stops default Roblox movement so we can use custom velocity
     hum.PlatformStand = true 
     
     FlyConnection = RunService.Heartbeat:Connect(function()
-        -- Safety check: If they die or fly gets turned off, stop the loop
         if not FlyEnabled or not char or not char.Parent then
             StopFly()
             return
@@ -508,7 +505,6 @@ local function StartFly()
         local cam = workspace.CurrentCamera
         local moveDir = Vector3.zero
 
-        -- Standard WASD + Space/Shift mapped to Camera direction
         if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
@@ -516,12 +512,10 @@ local function StartFly()
         if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0,1,0) end
         if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0,1,0) end
 
-        -- Normalize movement so flying diagonally isn't faster
         if moveDir.Magnitude > 0 then
             moveDir = moveDir.Unit
         end
 
-        -- Apply the velocity
         hrp.AssemblyLinearVelocity = moveDir * FlySpeed
     end)
 end
