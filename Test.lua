@@ -75,7 +75,6 @@ local OriginalLighting = {}
 -- FOV Changer
 local FOVValue = 70
 local DefaultFOV = 70
-local FOVEnabled = false
 
 -- Anti AFK
 local AntiAFKEnabled = false
@@ -308,7 +307,8 @@ local function CreateGUI()
         Header.Parent = Card
 
         local Content = Instance.new("Frame")
-        Content.Size = UDim2.new(1, -20, 0, 30)
+        Content.Size = UDim2.new(1, -20, 0, 0)
+        Content.AutomaticSize = Enum.AutomaticSize.Y
         Content.Position = UDim2.new(0, 10, 0, 35)
         Content.BackgroundTransparency = 1
         Content.Parent = Card
@@ -451,9 +451,8 @@ local function CreateGUI()
     
     -- HOME (Page 1)
     local c1, cont1 = CreateCard(Pages[1].Page, "Welcome", 1)
-    cont1.Size = UDim2.new(1, 0, 0, 40)
     local WelText = Instance.new("TextLabel")
-    WelText.Size = UDim2.new(1, 0, 1, 0)
+    WelText.Size = UDim2.new(1, 0, 0, 40)
     WelText.BackgroundTransparency = 1
     WelText.Text = "Made by Sardo.\nKrezzy Top Global!"
     WelText.TextColor3 = theme.textMuted
@@ -463,9 +462,8 @@ local function CreateGUI()
     WelText.Parent = cont1
 
     local c2, cont2 = CreateCard(Pages[1].Page, "Keybinds", 2)
-    cont2.Size = UDim2.new(1, 0, 0, 60)
     local KbText = Instance.new("TextLabel")
-    KbText.Size = UDim2.new(1, 0, 1, 0)
+    KbText.Size = UDim2.new(1, 0, 0, 50)
     KbText.BackgroundTransparency = 1
     KbText.Text = "[U] Fast Attack\n[G] Fly\n[K] Toggle Hub"
     KbText.TextColor3 = theme.textMuted
@@ -479,13 +477,11 @@ local function CreateGUI()
     local FastAttackBtn = CreateToggle(cont3)
 
     local c3b, cont3b = CreateCard(Pages[2].Page, "Hitbox Expander", 2)
-    cont3b.Size = UDim2.new(1, 0, 0, 70)
     local HitboxBtn = CreateToggle(cont3b)
     local HitboxSlider, HitboxLabel = CreateSlider(cont3b, "Size", 3, 30, 10, function(val) HitboxSize = val end)
-    HitboxSlider.Position = UDim2.new(0, 0, 0, 30)
-    HitboxSlider.Size = UDim2.new(1, -110, 0, 50)
+    HitboxSlider.Position = UDim2.new(0, 0, 0, 32)
 
-    local c3c, cont3c = CreateCard(Pages[3].Page, "Anti-Knockback", 3)
+    local c3c, cont3c = CreateCard(Pages[2].Page, "Anti-Knockback", 3)
     local AntiKBBtn = CreateToggle(cont3c)
 
     -- MOVEMENT (Page 3)
@@ -524,26 +520,18 @@ local function CreateGUI()
     TPStatus.TextXAlignment = Enum.TextXAlignment.Left
     TPStatus.Parent = cont5
 
-    -- Infinite Jump
     local c6, cont6 = CreateCard(Pages[3].Page, "Infinite Jump", 3)
-    cont6.Size = UDim2.new(1, 0, 0, 70)
     local InfiniteJumpBtn = CreateToggle(cont6)
-    local ResetJumpBtn = CreateSmallButton(cont6, "RESET", 110, 32, 50, 24)
 
-    -- Speed Modifier
     local c7, cont7 = CreateCard(Pages[3].Page, "Speed Modifier", 4)
-    cont7.Size = UDim2.new(1, 0, 0, 70)
     local SpeedBtn = CreateToggle(cont7)
     local SpeedSlider, SpeedLabel = CreateSlider(cont7, "Speed", 16, 300, 50, function(val) SpeedValue = val if SpeedEnabled then local h = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid") if h then h.WalkSpeed = val end end end)
-    SpeedSlider.Position = UDim2.new(0, 0, 0, 30)
-    SpeedSlider.Size = UDim2.new(1, -120, 0, 50)
+    SpeedSlider.Position = UDim2.new(0, 0, 0, 32)
     local ResetSpeedBtn = CreateSmallButton(cont7, "RESET", 60, 32, 50, 24)
 
-    -- Noclip
     local c8, cont8 = CreateCard(Pages[3].Page, "Noclip", 5)
     local NoclipBtn = CreateToggle(cont8)
 
-    -- Spider Climb
     local c9, cont9 = CreateCard(Pages[3].Page, "Spider Climb", 6)
     local SpiderClimbBtn = CreateToggle(cont9)
 
@@ -561,18 +549,15 @@ local function CreateGUI()
     local FullbrightBtn = CreateToggle(cont13)
 
     local c14, cont14 = CreateCard(Pages[4].Page, "FOV Changer", 5)
-    cont14.Size = UDim2.new(1, 0, 0, 70)
     local FOVSlider, FOVLabel = CreateSlider(cont14, "FOV", 30, 120, 70, function(val) FOVValue = val local cam = workspace.CurrentCamera if cam then cam.FieldOfView = val end end)
-    FOVSlider.Position = UDim2.new(0, 0, 0, 30)
-    FOVSlider.Size = UDim2.new(1, -120, 0, 50)
-    local ResetFOVBtn = CreateSmallButton(cont14, "RESET", 60, 32, 50, 24)
+    FOVSlider.Position = UDim2.new(0, 0, 0, 0)
+    local ResetFOVBtn = CreateSmallButton(cont14, "RESET", 60, 0, 50, 24)
 
     -- UTILITY (Page 5)
     local c15, cont15 = CreateCard(Pages[5].Page, "Anti AFK", 1)
     local AntiAFKBtn = CreateToggle(cont15)
 
     local c16, cont16 = CreateCard(Pages[5].Page, "FPS Booster", 2)
-    cont16.Size = UDim2.new(1, 0, 0, 60)
     local FPSBoostBtn = CreateSmallButton(cont16, "BOOST", 100, 0, 80, 28)
     FPSBoostBtn.Position = UDim2.new(1, -80, 0, 0)
     local FPSText = Instance.new("TextLabel")
@@ -587,8 +572,7 @@ local function CreateGUI()
     FPSText.Parent = cont16
 
     local c17, cont17 = CreateCard(Pages[5].Page, "Server Actions", 3)
-    cont17.Size = UDim2.new(1, 0, 0, 60)
-    local RejoinBtn = CreateSmallButton(cont17, "REJOIN", 100, 0, 80, 28)
+    local RejoinBtn = CreateSmallButton(cont17, "REJOIN", 170, 0, 80, 28)
     RejoinBtn.Position = UDim2.new(1, -170, 0, 0)
     local ServerHopBtn = CreateSmallButton(cont17, "SERVER HOP", 80, 0, 80, 28)
     ServerHopBtn.Position = UDim2.new(1, -80, 0, 0)
@@ -627,7 +611,6 @@ local function CreateGUI()
         HitboxBtn = HitboxBtn,
         AntiKBBtn = AntiKBBtn,
         InfiniteJumpBtn = InfiniteJumpBtn,
-        ResetJumpBtn = ResetJumpBtn,
         SpeedBtn = SpeedBtn,
         SpeedLabel = SpeedLabel,
         ResetSpeedBtn = ResetSpeedBtn,
@@ -655,7 +638,6 @@ local ESPBtn = UI.ESPBtn
 local HitboxBtn = UI.HitboxBtn
 local AntiKBBtn = UI.AntiKBBtn
 local InfiniteJumpBtn = UI.InfiniteJumpBtn
-local ResetJumpBtn = UI.ResetJumpBtn
 local SpeedBtn = UI.SpeedBtn
 local SpeedLabel = UI.SpeedLabel
 local ResetSpeedBtn = UI.ResetSpeedBtn
@@ -1048,7 +1030,6 @@ local function CreateBoxForPlayer(player)
     
     local boxColor = theme.accentGreen
     
-    -- Top
     local top = Instance.new("Frame")
     top.Name = "Top"
     top.Size = UDim2.new(1, 0, 0, 2)
@@ -1058,7 +1039,6 @@ local function CreateBoxForPlayer(player)
     top.BorderSizePixel = 0
     top.Parent = billboard
     
-    -- Bottom
     local bottom = Instance.new("Frame")
     bottom.Name = "Bottom"
     bottom.Size = UDim2.new(1, 0, 0, 2)
@@ -1068,7 +1048,6 @@ local function CreateBoxForPlayer(player)
     bottom.BorderSizePixel = 0
     bottom.Parent = billboard
     
-    -- Left
     local left = Instance.new("Frame")
     left.Name = "Left"
     left.Size = UDim2.new(0, 2, 1, 0)
@@ -1078,7 +1057,6 @@ local function CreateBoxForPlayer(player)
     left.BorderSizePixel = 0
     left.Parent = billboard
     
-    -- Right
     local right = Instance.new("Frame")
     right.Name = "Right"
     right.Size = UDim2.new(0, 2, 1, 0)
@@ -1142,9 +1120,6 @@ local function UpdateTracers()
             if head and humanoid and humanoid.Health > 0 then
                 local screenPos, onScreen = camera:WorldToScreenPoint(head.Position)
                 if onScreen then
-                    local dist = math.floor((head.Position - localHRP.Position).Magnitude)
-                    
-                    -- Create line from bottom center to player
                     local line = Instance.new("Frame")
                     line.BackgroundColor3 = theme.accentGreen
                     line.BackgroundTransparency = 0.5
@@ -1211,16 +1186,17 @@ end
 local function BoostFPS()
     Lighting.GlobalShadows = false
     Lighting.FogEnd = 100000
-    Lighting.Brightness = 1
+    Lighting.Brightness = 2
+    Lighting.ClockTime = 14
     
     for _, obj in pairs(Lighting:GetChildren()) do
-        if obj:IsA("PostEffect") then
+        if obj:IsA("PostEffect") or obj:IsA("Atmosphere") then
             obj.Enabled = false
         end
     end
     
     pcall(function()
-        settings():GetService("UserGameSetting" .. "s").QualityLevel = Enum.QualityLevel.Level01
+        settings().QualityLevel = Enum.QualityLevel.Level01
     end)
 end
 
@@ -1305,12 +1281,6 @@ local function ToggleInfiniteJump()
     if InfiniteJumpEnabled then StartInfiniteJump() else StopInfiniteJump() end
 end
 
-local function ResetInfiniteJump()
-    InfiniteJumpEnabled = false
-    ToggleButtonStyle(InfiniteJumpBtn, false)
-    StopInfiniteJump()
-end
-
 local function ToggleSpeed()
     SpeedEnabled = not SpeedEnabled
     ToggleButtonStyle(SpeedBtn, SpeedEnabled)
@@ -1390,7 +1360,6 @@ ESPBtn.MouseButton1Click:Connect(ToggleESP)
 HitboxBtn.MouseButton1Click:Connect(ToggleHitbox)
 AntiKBBtn.MouseButton1Click:Connect(ToggleAntiKB)
 InfiniteJumpBtn.MouseButton1Click:Connect(ToggleInfiniteJump)
-ResetJumpBtn.MouseButton1Click:Connect(ResetInfiniteJump)
 SpeedBtn.MouseButton1Click:Connect(ToggleSpeed)
 ResetSpeedBtn.MouseButton1Click:Connect(ResetSpeed)
 NoclipBtn.MouseButton1Click:Connect(ToggleNoclip)
