@@ -674,10 +674,7 @@ Players.PlayerAdded:Connect(function(p) refreshPlayerList() end)
 Players.PlayerRemoving:Connect(function(player)
     if player == targetPlayer then
         teleporting = false; targetPlayer = nil
-        TPToggleBtn.Text = "OFF"
-        TPToggleBtn:SetAttribute("On", false)
-        TweenService:Create(TPToggleBtn, tweenInfo, {BackgroundColor3 = theme.bg, TextColor3 = theme.textMuted}):Play()
-        TPToggleBtn.UIStroke.Transparency = 0.8
+        ToggleButtonStyle(TPToggleBtn, false)
         TPStatus.Text = "Status: Player left"
     end
     if ESPObjects[player] then if ESPObjects[player].Parent then ESPObjects[player].Parent:Destroy() end ESPObjects[player] = nil end
@@ -691,15 +688,20 @@ local function ToggleButtonStyle(Btn, state)
     Btn:SetAttribute("On", state)
     if state then
         Btn.Text = "ON"
-        Btn.BackgroundTransparency = 0
+        Btn.BackgroundColor3 = theme.bg -- Ensure base color is set under gradient
+        if not Btn:FindFirstChild("Grad") then CreateGradient().Parent = Btn end
         TweenService:Create(Btn, tweenInfo, {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
         Btn.UIStroke.Transparency = 0.4
-        if not Btn:FindFirstChild("Grad") then CreateGradient().Parent = Btn end
     else
         Btn.Text = "OFF"
-        TweenService:Create(Btn, tweenInfo, {TextColor3 = theme.textMuted, BackgroundColor3 = theme.bg}):Play()
+        -- Destroy gradient FIRST to prevent color snapping glitches
+        local g = Btn:FindFirstChild("Grad") 
+        if g then g:Destroy() end
+        -- Set normal background color explicitly
+        Btn.BackgroundColor3 = theme.bg
+        -- Tween text back to normal
+        TweenService:Create(Btn, tweenInfo, {TextColor3 = theme.textMuted}):Play()
         Btn.UIStroke.Transparency = 0.8
-        local g = Btn:FindFirstChild("Grad") if g then g:Destroy() end
     end
 end
 
@@ -1142,13 +1144,10 @@ end
 local function ToggleTP()
     if not targetPlayer then TPStatus.Text = "Status: Select a player"; return end
     teleporting = not teleporting
+    ToggleButtonStyle(TPToggleBtn, teleporting)
     if teleporting then
-        TPToggleBtn.Text = "ON"
-        ToggleButtonStyle(TPToggleBtn, true)
         TPStatus.Text = "Target: "..targetPlayer.DisplayName
     else
-        TPToggleBtn.Text = "OFF"
-        ToggleButtonStyle(TPToggleBtn, false)
         TPStatus.Text = "Status: Idle"
     end
 end
