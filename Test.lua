@@ -8,11 +8,11 @@ local VirtualUser = game:GetService("VirtualUser")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 
--- !!! CHANGE THESE SETTINGS HERE !!!
-local OwnerUserId = 1726291618 -- PUT YOUR ROBLOX USER ID HERE
-local DangerGroupId = 4372130 -- PUT THE GROUP ID HERE
-local DangerMinRank = 2 -- PUT THE MINIMUM RANK NUMBER HERE (e.g., 250 is usually High Rank)
--- !!! CHANGE THESE SETTINGS HERE !!!
+-- !!! YOUR SETTINGS HERE !!!
+local OwnerUserId = 1726291618 
+local DangerGroupId = 4372130   
+local DangerMinRank = 2       
+-- !!! YOUR SETTINGS HERE !!!
 
 -- Settings
 local FastAttackEnabled = false
@@ -126,29 +126,70 @@ local function ApplyHoverEffect(btn)
     end)
 end
 
--- Notification System
-local function Notify(title, text)
+-- Modern Notification System (Top Right)
+local function Notify(title, text, notifType)
     if not HubGui then return end
-    local notif = Instance.new("TextLabel")
-    notif.Size = UDim2.new(0, 250, 0, 60)
-    notif.BackgroundColor3 = theme.card
-    notif.TextColor3 = theme.textMain
-    notif.Text = title .. "\n" .. text
-    notif.Font = Enum.Font.GothamBold
-    notif.TextSize = 12
-    notif.TextWrapped = true
-    notif.Parent = HubGui
-    Instance.new("UICorner", notif).CornerRadius = UDim.new(0, 8)
-    local notifStroke = Instance.new("UIStroke", notif)
-    notifStroke.Color = theme.accentRed
-    notifStroke.Transparency = 0.5
+    local accentColor = theme.accentGreen
+    if notifType == "Danger" then accentColor = theme.accentRed end
+
+    local notifContainer = Instance.new("Frame")
+    notifContainer.Size = UDim2.new(0, 280, 0, 70)
+    notifContainer.BackgroundColor3 = theme.card
+    notifContainer.BorderSizePixel = 0
+    notifContainer.AnchorPoint = Vector2.new(1, 0)
+    notifContainer.Position = UDim2.new(1, 20, 0, 20) -- Start off-screen right
+    notifContainer.Parent = HubGui
+    Instance.new("UICorner", notifContainer).CornerRadius = UDim.new(0, 10)
     
-    notif.Position = UDim2.new(1, 10, 0.5, -30)
-    TweenService:Create(notif, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Position = UDim2.new(1, -270, 0.5, -30)}):Play()
-    task.delay(3, function()
-        TweenService:Create(notif, TweenInfo.new(0.3), {Position = UDim2.new(1, 10, 0.5, -30)}):Play()
+    local notifStroke = Instance.new("UIStroke", notifContainer)
+    notifStroke.Color = theme.stroke
+    notifStroke.Transparency = 0.85
+
+    -- Left Accent Bar
+    local accentBar = Instance.new("Frame")
+    accentBar.Size = UDim2.new(0, 4, 0.8, 0)
+    accentBar.Position = UDim2.new(0, 0, 0.1, 0)
+    accentBar.BackgroundColor3 = accentColor
+    accentBar.BorderSizePixel = 0
+    accentBar.Parent = notifContainer
+    Instance.new("UICorner", accentBar).CornerRadius = UDim.new(0, 2)
+    local grad = Instance.new("UIGradient")
+    grad.Color = ColorSequence.new(accentColor, theme.accentBlue)
+    grad.Rotation = 90
+    grad.Parent = accentBar
+
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, -25, 0, 25)
+    titleLabel.Position = UDim2.new(0, 15, 0, 10)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = title
+    titleLabel.TextColor3 = theme.textMain
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextSize = 13
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.Parent = notifContainer
+
+    local descLabel = Instance.new("TextLabel")
+    descLabel.Size = UDim2.new(1, -25, 0, 20)
+    descLabel.Position = UDim2.new(0, 15, 0, 36)
+    descLabel.BackgroundTransparency = 1
+    descLabel.Text = text
+    descLabel.TextColor3 = theme.textMuted
+    descLabel.Font = Enum.Font.Gotham
+    descLabel.TextSize = 11
+    descLabel.TextXAlignment = Enum.TextXAlignment.Left
+    descLabel.TextTruncate = Enum.TextTruncate.AtEnd
+    descLabel.Parent = notifContainer
+
+    -- Slide in animation
+    local targetPos = UDim2.new(1, -290, 0, 20)
+    TweenService:Create(notifContainer, TweenInfo.new(0.4, Enum.EasingStyle.Back), {Position = targetPos}):Play()
+    
+    task.delay(3.5, function()
+        -- Slide out animation
+        TweenService:Create(notifContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Position = UDim2.new(1, 20, 0, 20)}):Play()
         task.wait(0.3)
-        if notif then notif:Destroy() end
+        if notifContainer then notifContainer:Destroy() end
     end)
 end
 
@@ -699,19 +740,19 @@ KbBtn3.MouseButton1Click:Connect(function() startRebind(KbBtn3, "HUB_KEY") end)
 Players.PlayerAdded:Connect(function(p)
     refreshPlayerList()
     
-    -- Owner Join Notification
+    -- Owner Join Notification (Green)
     if p.UserId == OwnerUserId then
         task.defer(function()
-            Notify("👑 Owner Joined", "noobez Hub owner joined!")
+            Notify("👑 Owner Joined", "noobez Hub owner joined!", "Owner")
         end)
     end
     
-    -- Danger Alert Logic (Always active in background)
+    -- Danger Alert Logic (Red)
     if DangerGroupId ~= 0 then
         task.defer(function()
             local success, rank = pcall(function() return p:GetRankInGroup(DangerGroupId) end)
             if success and rank >= DangerMinRank then
-                Notify("⚠️ DANGER ALERT", p.DisplayName .. " joined! (Rank: " .. rank .. ")")
+                Notify("⚠️ DANGER ALERT", p.DisplayName .. " joined! (Rank: " .. rank .. ")", "Danger")
             end
         end)
     end
