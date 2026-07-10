@@ -28,12 +28,6 @@ local teleporting = false
 local targetPlayer = nil
 local teleportCooldown = 0.1
 
--- Target Strafe
-local StrafeEnabled = false
-local StrafeConnection = nil
-local StrafeRadius = 15
-local StrafeSpeed = 150
-
 -- Spectate
 local SpectateEnabled = false
 
@@ -437,7 +431,7 @@ local function CreateGUI()
         Container.Size = UDim2.new(1, 0, 0, 50)
         Container.BackgroundTransparency = 1
         Container.Parent = parent
-
+        
         local Label = Instance.new("TextLabel")
         Label.Size = UDim2.new(1, -110, 0, 20)
         Label.Position = UDim2.new(0, 0, 0, 0)
@@ -448,7 +442,7 @@ local function CreateGUI()
         Label.TextSize = 11
         Label.TextXAlignment = Enum.TextXAlignment.Left
         Label.Parent = Container
-
+        
         local SliderBg = Instance.new("Frame")
         SliderBg.Size = UDim2.new(1, -110, 0, 6)
         SliderBg.Position = UDim2.new(0, 0, 0, 28)
@@ -456,7 +450,7 @@ local function CreateGUI()
         SliderBg.BorderSizePixel = 0
         SliderBg.Parent = Container
         Instance.new("UICorner", SliderBg).CornerRadius = UDim.new(0, 3)
-
+        
         local SliderFill = Instance.new("Frame")
         SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
         SliderFill.BackgroundColor3 = theme.accentGreen
@@ -464,14 +458,14 @@ local function CreateGUI()
         SliderFill.Parent = SliderBg
         Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(0, 3)
         CreateGradient().Parent = SliderFill
-
+        
         local SliderBtn = Instance.new("TextButton")
         SliderBtn.Size = UDim2.new(1, -110, 0, 20)
         SliderBtn.Position = UDim2.new(0, 0, 0, 20)
         SliderBtn.BackgroundTransparency = 1
         SliderBtn.Text = ""
         SliderBtn.Parent = Container
-
+        
         local dragging = false
         SliderBtn.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
@@ -508,12 +502,12 @@ local function CreateGUI()
     KbBtn1.Position = UDim2.new(0, 0, 0, 0)
     KbBtn1.TextXAlignment = Enum.TextXAlignment.Left
     KbBtn1.Font = Enum.Font.GothamMedium
-
+    
     local KbBtn2 = CreateSmallButton(cont2, "["..FLY_KEY.Name.."] Fly", 200, 30, 190, 24)
     KbBtn2.Position = UDim2.new(0, 0, 0, 30)
     KbBtn2.TextXAlignment = Enum.TextXAlignment.Left
     KbBtn2.Font = Enum.Font.GothamMedium
-
+    
     local KbBtn3 = CreateSmallButton(cont2, "["..HUB_KEY.Name.."] Toggle Hub", 200, 60, 190, 24)
     KbBtn3.Position = UDim2.new(0, 0, 0, 60)
     KbBtn3.TextXAlignment = Enum.TextXAlignment.Left
@@ -528,7 +522,7 @@ local function CreateGUI()
     local c5, cont5 = CreateCard(Pages[3].Page, "Loop Teleport", 2)
     local PlayerScrollFrame = Instance.new("ScrollingFrame")
     PlayerScrollFrame.Size = UDim2.new(1, 0, 0, 80)
-    PlayerScrollFrame.Position = UDim2.new(0, 0, 0, 0)
+    PlayerScrollFrame.Position = UDim2.new(0, 0, 0, 0) 
     PlayerScrollFrame.BackgroundTransparency = 1
     PlayerScrollFrame.BorderSizePixel = 0
     PlayerScrollFrame.ScrollBarThickness = 2
@@ -555,26 +549,12 @@ local function CreateGUI()
     TPStatus.TextXAlignment = Enum.TextXAlignment.Left
     TPStatus.Parent = cont5
 
-    local StrafeBtn = CreateToggle(cont5)
-    StrafeBtn.Position = UDim2.new(1, -100, 0, 120)
-    StrafeBtn.Size = UDim2.new(0, 100, 0, 24)
-    local StrafeLabel = Instance.new("TextLabel")
-    StrafeLabel.Size = UDim2.new(1, -110, 0, 24)
-    StrafeLabel.Position = UDim2.new(0, 0, 0, 120)
-    StrafeLabel.BackgroundTransparency = 1
-    StrafeLabel.Text = "Target Strafe"
-    StrafeLabel.TextColor3 = theme.textMuted
-    StrafeLabel.Font = Enum.Font.GothamMedium
-    StrafeLabel.TextSize = 11
-    StrafeLabel.TextXAlignment = Enum.TextXAlignment.Left
-    StrafeLabel.Parent = cont5
-
     local SpectateBtn = CreateToggle(cont5)
-    SpectateBtn.Position = UDim2.new(1, -100, 0, 150)
+    SpectateBtn.Position = UDim2.new(1, -100, 0, 120)
     SpectateBtn.Size = UDim2.new(0, 100, 0, 24)
     local SpectateLabel = Instance.new("TextLabel")
     SpectateLabel.Size = UDim2.new(1, -110, 0, 24)
-    SpectateLabel.Position = UDim2.new(0, 0, 0, 150)
+    SpectateLabel.Position = UDim2.new(0, 0, 0, 120)
     SpectateLabel.BackgroundTransparency = 1
     SpectateLabel.Text = "Spectate Target"
     SpectateLabel.TextColor3 = theme.textMuted
@@ -644,7 +624,7 @@ local function CreateGUI()
     end)
 
     ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
-
+    
     return {
         FastAttackBtn = FastAttackBtn, FlyBtn = FlyBtn, TPToggleBtn = TPToggleBtn, TPStatus = TPStatus,
         PlayerScrollFrame = PlayerScrollFrame, ESPBtn = ESPBtn,
@@ -652,7 +632,7 @@ local function CreateGUI()
         BoxESPBtn = BoxESPBtn, FullbrightBtn = FullbrightBtn,
         FOVLabel = FOVLabel, ResetFOVBtn = ResetFOVBtn, AntiAFKBtn = AntiAFKBtn,
         FPSBoostBtn = FPSBoostBtn, RejoinBtn = RejoinBtn, ServerHopBtn = ServerHopBtn,
-        StrafeBtn = StrafeBtn, SpectateBtn = SpectateBtn,
+        SpectateBtn = SpectateBtn,
         KbBtn1 = KbBtn1, KbBtn2 = KbBtn2, KbBtn3 = KbBtn3
     }
 end
@@ -664,7 +644,7 @@ local InfiniteJumpBtn, NoclipBtn, SpiderClimbBtn = UI.InfiniteJumpBtn, UI.Noclip
 local BoxESPBtn, FullbrightBtn = UI.BoxESPBtn, UI.FullbrightBtn
 local FOVLabel, ResetFOVBtn, AntiAFKBtn = UI.FOVLabel, UI.ResetFOVBtn, UI.AntiAFKBtn
 local FPSBoostBtn, RejoinBtn, ServerHopBtn = UI.FPSBoostBtn, UI.RejoinBtn, UI.ServerHopBtn
-local StrafeBtn, SpectateBtn = UI.StrafeBtn, UI.SpectateBtn
+local SpectateBtn = UI.SpectateBtn
 local KbBtn1, KbBtn2, KbBtn3 = UI.KbBtn1, UI.KbBtn2, UI.KbBtn3
 
 local playerButtons = {}
@@ -674,7 +654,7 @@ local function createPlayerButton(player, index)
     btn.Size = UDim2.new(1, 0, 0, 22)
     btn.BackgroundColor3 = theme.bg
     btn.TextColor3 = theme.textMuted
-    btn.Text = "  "..player.DisplayName
+    btn.Text = "  "..player.DisplayName.." (@"..player.Name..")"
     btn.Font = Enum.Font.Gotham
     btn.TextSize = 11
     btn.TextXAlignment = Enum.TextXAlignment.Left
@@ -693,7 +673,6 @@ local function createPlayerButton(player, index)
         btn.BackgroundColor3 = theme.card
         btn.TextColor3 = theme.accentGreen
         if teleporting then TPStatus.Text = "Target: "..player.DisplayName end
-        if StrafeEnabled then TPStatus.Text = "Strafing: "..player.DisplayName end
         if SpectateEnabled then TPStatus.Text = "Viewing: "..player.DisplayName end
     end)
     playerButtons[player] = btn
@@ -725,7 +704,7 @@ KbBtn3.MouseButton1Click:Connect(function() startRebind(KbBtn3, "HUB_KEY") end)
 
 Players.PlayerAdded:Connect(function(p)
     refreshPlayerList()
-
+    
     task.defer(function()
         local isOwner = false
         for _, id in pairs(OwnerUserIds) do
@@ -734,12 +713,12 @@ Players.PlayerAdded:Connect(function(p)
                 break
             end
         end
-
+        
         if isOwner then
             Notify("👑 Owner Joined", "noobez Hub Owner: " .. p.Name .. " joined the game", "Owner")
             return
         end
-
+        
         local isStaff = false
         for _, id in pairs(StaffUserIds) do
             if p.UserId == id then
@@ -747,12 +726,12 @@ Players.PlayerAdded:Connect(function(p)
                 break
             end
         end
-
+        
         if isStaff then
             Notify("🛡️ Staff Joined", "noobez Hub Staff: " .. p.Name .. " joined the game", "Staff")
             return
         end
-
+        
         if DangerGroupId ~= 0 then
             local success, rank = pcall(function() return p:GetRankInGroup(DangerGroupId) end)
             if success and rank >= DangerMinRank then
@@ -766,7 +745,6 @@ Players.PlayerRemoving:Connect(function(player)
     if player == targetPlayer then
         teleporting = false; targetPlayer = nil
         ToggleButtonStyle(TPToggleBtn, false)
-        ToggleButtonStyle(StrafeBtn, false); StrafeEnabled = false
         ToggleButtonStyle(SpectateBtn, false); SpectateEnabled = false
         StopSpectate()
         TPStatus.Text = "Status: Player left"
@@ -855,23 +833,6 @@ local function StopFly()
     if h then h.PlatformStand = false end if r then r.AssemblyLinearVelocity = Vector3.zero end if c then DisableNoclip(c) end
 end
 
-local function StartStrafe()
-    if StrafeConnection then StrafeConnection:Disconnect() end
-    StrafeConnection = RunService.Heartbeat:Connect(function(dt)
-        if not StrafeEnabled or not targetPlayer then return end
-        local char = Players.LocalPlayer.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        local tChar = targetPlayer.Character
-        local tHrp = tChar and tChar:FindFirstChild("HumanoidRootPart")
-        if hrp and tHrp then
-            local angle = tick() * StrafeSpeed
-            local offset = CFrame.Angles(0, math.rad(angle), 0) * CFrame.new(StrafeRadius, 0, 0)
-            hrp.CFrame = tHrp.CFrame * offset
-        end
-    end)
-end
-local function StopStrafe() if StrafeConnection then StrafeConnection:Disconnect() StrafeConnection = nil end end
-
 local function StartSpectate()
     if not targetPlayer or not targetPlayer.Character then return end
     local hum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
@@ -923,7 +884,14 @@ local function StartSpiderClimb()
 end
 local function StopSpiderClimb() if SpiderClimbConnection then SpiderClimbConnection:Disconnect() SpiderClimbConnection = nil end end
 
--- Helper to check if a player is in StaffUserIds
+-- Helper to check if a player is an Owner or Staff
+local function isOwnerUser(userId)
+    for _, id in pairs(OwnerUserIds) do
+        if id == userId then return true end
+    end
+    return false
+end
+
 local function isStaffUser(userId)
     for _, id in pairs(StaffUserIds) do
         if id == userId then return true end
@@ -940,15 +908,21 @@ local function UpdateESP()
             local c = p.Character; local h = c and c:FindFirstChild("Head"); local hm = c and c:FindFirstChild("Humanoid"); local hr = c and c:FindFirstChild("HumanoidRootPart")
             if h and hm and hr and hm.Health > 0 then
                 local dist, hp = math.floor((hr.Position - mhr.Position).Magnitude), math.floor(hm.Health)
-                local staffTag = ""
-                local isStaff = isStaffUser(p.UserId)
-                if isStaff then
-                    staffTag = '<font color="#ffd700">[noobez Staff]</font>\n'
+                
+                local roleTag = ""
+                local isSpecialRole = false
+                if isOwnerUser(p.UserId) then
+                    roleTag = '<font color="#ffd700">[noobez Owner]</font>\n'
+                    isSpecialRole = true
+                elseif isStaffUser(p.UserId) then
+                    roleTag = '<font color="#ffd700">[noobez Staff]</font>\n'
+                    isSpecialRole = true
                 end
-                local espText = staffTag .. '<font color="#00ff88">'..p.Name..'</font>\n<font color="#00bbff">HP: '..hp..' | '..dist..'m</font>'
+                
+                local espText = roleTag .. '<font color="#00ff88">'..p.Name..'</font>\n<font color="#00bbff">HP: '..hp..' | '..dist..'m</font>'
+                
                 if not ESPObjects[p] then
-                    -- Taller box for staff so the tag fits
-                    local bbSize = UDim2.new(0, 120, 0, isStaff and 55 or 40)
+                    local bbSize = UDim2.new(0, 120, 0, isSpecialRole and 55 or 40)
                     local bb = Instance.new("BillboardGui"); bb.Adornee = h; bb.Size = bbSize; bb.StudsOffset = Vector3.new(0, 3, 0); bb.AlwaysOnTop = true; bb.Parent = h
                     local l = Instance.new("TextLabel"); l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = theme.textMain; l.TextStrokeTransparency = 0.5; l.TextStrokeColor3 = Color3.new(0,0,0); l.Font = Enum.Font.GothamBold; l.TextSize = 11; l.TextScaled = true
                     l.RichText = true; l.Text = espText; l.Parent = bb; ESPObjects[p] = l
@@ -970,7 +944,6 @@ local function ClearBoxESP()
     end
     BoxESPObjects = {}
 end
-
 local function CreateBoxForPlayer(player)
     local char = player.Character; if not char then return end; local hrp = char:FindFirstChild("HumanoidRootPart"); if not hrp then return end
     if BoxESPObjects[player] then BoxESPObjects[player].Adornee = hrp; return end
@@ -984,18 +957,8 @@ local function CreateBoxForPlayer(player)
         else f.Size = UDim2.new(0, 2, 1, 0); f.Position = UDim2.new(1, -2, 0, 0) end
     end; BoxESPObjects[player] = billboard
 end
-
 local function UpdateBoxESP()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= Players.LocalPlayer then
-            local char = player.Character; local humanoid = char and char:FindFirstChild("Humanoid")
-            if char and humanoid and humanoid.Health > 0 then
-                CreateBoxForPlayer(player)
-            else
-                if BoxESPObjects[player] then BoxESPObjects[player]:Destroy(); BoxESPObjects[player] = nil end
-            end
-        end
-    end
+    for _, player in pairs(Players:GetPlayers()) do if player ~= Players.LocalPlayer then local char = player.Character; local humanoid = char and char:FindFirstChild("Humanoid") if char and humanoid and humanoid.Health > 0 then CreateBoxForPlayer(player) else if BoxESPObjects[player] then BoxESPObjects[player]:Destroy(); BoxESPObjects[player] = nil end end end end
 end
 
 local function EnableFullbright() OriginalLighting = {Brightness = Lighting.Brightness, ClockTime = Lighting.ClockTime, FogEnd = Lighting.FogEnd, FogStart = Lighting.FogStart, Ambient = Lighting.Ambient, OutdoorAmbient = Lighting.OutdoorAmbient, GlobalShadows = Lighting.GlobalShadows}; Lighting.Brightness = 2; Lighting.ClockTime = 14; Lighting.FogEnd = 100000; Lighting.FogStart = 0; Lighting.Ambient = Color3.fromRGB(178, 178, 178); Lighting.OutdoorAmbient = Color3.fromRGB(178, 178, 178); Lighting.GlobalShadows = false end
@@ -1014,38 +977,14 @@ local function ToggleTP()
     teleporting = not teleporting; ToggleButtonStyle(TPToggleBtn, teleporting)
     TPStatus.Text = teleporting and "Target: "..targetPlayer.DisplayName or "Status: Idle"
 end
-local function ToggleStrafe()
-    if not targetPlayer then TPStatus.Text = "Status: Select a player"; return end
-    StrafeEnabled = not StrafeEnabled; ToggleButtonStyle(StrafeBtn, StrafeEnabled)
-    if StrafeEnabled then StartStrafe() else StopStrafe() end
-    TPStatus.Text = StrafeEnabled and "Strafing: "..targetPlayer.DisplayName or "Status: Idle"
-end
 local function ToggleSpectate()
     if not targetPlayer then TPStatus.Text = "Status: Select a player"; return end
     SpectateEnabled = not SpectateEnabled; ToggleButtonStyle(SpectateBtn, SpectateEnabled)
     if SpectateEnabled then StartSpectate() else StopSpectate() end
     TPStatus.Text = SpectateEnabled and "Viewing: "..targetPlayer.DisplayName or "Status: Idle"
 end
-local function ToggleESP()
-    ESPEnabled = not ESPEnabled; ToggleButtonStyle(ESPBtn, ESPEnabled)
-    if ESPEnabled then
-        if ESPConnection then ESPConnection:Disconnect() end
-        ESPConnection = RunService.RenderStepped:Connect(UpdateESP)
-    else
-        if ESPConnection then ESPConnection:Disconnect() ESPConnection = nil end
-        ClearESP()
-    end
-end
-local function ToggleBoxESP()
-    BoxESPEnabled = not BoxESPEnabled; ToggleButtonStyle(BoxESPBtn, BoxESPEnabled)
-    if BoxESPEnabled then
-        if BoxESPConnection then BoxESPConnection:Disconnect() end
-        BoxESPConnection = RunService.RenderStepped:Connect(UpdateBoxESP)
-    else
-        if BoxESPConnection then BoxESPConnection:Disconnect() BoxESPConnection = nil end
-        ClearBoxESP()
-    end
-end
+local function ToggleESP() ESPEnabled = not ESPEnabled; ToggleButtonStyle(ESPBtn, ESPEnabled); if ESPEnabled then if ESPConnection then ESPConnection:Disconnect() end; ESPConnection = RunService.RenderStepped:Connect(UpdateESP) else if ESPConnection then ESPConnection:Disconnect() ESPConnection = nil end; ClearESP() end end
+local function ToggleBoxESP() BoxESPEnabled = not BoxESPEnabled; ToggleButtonStyle(BoxESPBtn, BoxESPEnabled); if BoxESPEnabled then if BoxESPConnection then BoxESPConnection:Disconnect() end; BoxESPConnection = RunService.RenderStepped:Connect(UpdateBoxESP) else if BoxESPConnection then BoxESPConnection:Disconnect() BoxESPConnection = nil end; ClearBoxESP() end end
 local function ToggleFullbright() FullbrightEnabled = not FullbrightEnabled; ToggleButtonStyle(FullbrightBtn, FullbrightEnabled); if FullbrightEnabled then EnableFullbright() else DisableFullbright() end end
 local function ToggleAntiAFK() AntiAFKEnabled = not AntiAFKEnabled; ToggleButtonStyle(AntiAFKBtn, AntiAFKEnabled); if AntiAFKEnabled then StartAntiAFK() else StopAntiAFK() end end
 
@@ -1053,7 +992,6 @@ local function ToggleAntiAFK() AntiAFKEnabled = not AntiAFKEnabled; ToggleButton
 FastAttackBtn.MouseButton1Click:Connect(ToggleFastAttack)
 FlyBtn.MouseButton1Click:Connect(ToggleFly)
 TPToggleBtn.MouseButton1Click:Connect(ToggleTP)
-StrafeBtn.MouseButton1Click:Connect(ToggleStrafe)
 SpectateBtn.MouseButton1Click:Connect(ToggleSpectate)
 ESPBtn.MouseButton1Click:Connect(ToggleESP)
 BoxESPBtn.MouseButton1Click:Connect(ToggleBoxESP)
