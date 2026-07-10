@@ -86,6 +86,8 @@ local MainFrameRef = nil
 local AntiStunEnabled = false
 local AutoV4Enabled = false
 local AutoV4Connection = nil
+local AntiLavaEnabled = false
+local AntiLavaConnection = nil
 
 -- UI Theme Colors
 local theme = {
@@ -138,18 +140,21 @@ local function Notify(title, text, notifType)
     notifContainer.BorderSizePixel = 0
     notifContainer.AnchorPoint = Vector3.new(1, 0)
     notifContainer.Position = UDim2.new(1, 20, 0, 20)
+    notifContainer.ZIndex = 100 -- FORCE ON TOP
     notifContainer.Parent = HubGui
     Instance.new("UICorner", notifContainer).CornerRadius = UDim.new(0, 10)
 
     local notifStroke = Instance.new("UIStroke", notifContainer)
     notifStroke.Color = theme.stroke
     notifStroke.Transparency = 0.85
+    notifStroke.ZIndex = 101
 
     local accentBar = Instance.new("Frame")
     accentBar.Size = UDim2.new(0, 4, 0.8, 0)
     accentBar.Position = UDim2.new(0, 0, 0.1, 0)
     accentBar.BackgroundColor3 = accentColor
     accentBar.BorderSizePixel = 0
+    accentBar.ZIndex = 102
     accentBar.Parent = notifContainer
     Instance.new("UICorner", accentBar).CornerRadius = UDim.new(0, 2)
 
@@ -162,6 +167,7 @@ local function Notify(title, text, notifType)
     titleLabel.Font = Enum.Font.GothamBold
     titleLabel.TextSize = 13
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.ZIndex = 103
     titleLabel.Parent = notifContainer
 
     local descLabel = Instance.new("TextLabel")
@@ -174,6 +180,7 @@ local function Notify(title, text, notifType)
     descLabel.TextSize = 11
     descLabel.TextXAlignment = Enum.TextXAlignment.Left
     descLabel.TextTruncate = Enum.TextTruncate.AtEnd
+    descLabel.ZIndex = 103
     descLabel.Parent = notifContainer
 
     TweenService:Create(notifContainer, TweenInfo.new(0.4, Enum.EasingStyle.Back), {Position = UDim2.new(1, -310, 0, 20)}):Play()
@@ -252,7 +259,7 @@ local function CreateGUI()
     Version.Size = UDim2.new(0, 40, 1, 0)
     Version.Position = UDim2.new(1, -50, 0, 0)
     Version.BackgroundTransparency = 1
-    Version.Text = "v2.2"
+    Version.Text = "v2.3"
     Version.TextColor3 = theme.textMuted
     Version.Font = Enum.Font.GothamMedium
     Version.TextSize = 11
@@ -434,7 +441,6 @@ local function CreateGUI()
         return Btn
     end
 
-    -- NEW: Full Width Button for Teleports/Utilities
     local function CreateFullButton(parent, text, posY)
         local Btn = Instance.new("TextButton")
         Btn.Size = UDim2.new(1, 0, 0, 30)
@@ -524,7 +530,6 @@ local function CreateGUI()
     end
 
     -- === BUILD PAGES ===
-    -- HOME TAB (Pages[1])
     local c1, cont1 = CreateCard(Pages[1].Page, "Welcome", 1)
     local WelText = Instance.new("TextLabel")
     WelText.Size = UDim2.new(1, 0, 0, 40)
@@ -544,9 +549,9 @@ local function CreateGUI()
 
     local c3, cont3 = CreateCard(Pages[1].Page, "Update Log", 3)
     local LogText = Instance.new("TextLabel")
-    LogText.Size = UDim2.new(1, 0, 0, 250)
+    LogText.Size = UDim2.new(1, 0, 0, 270)
     LogText.BackgroundTransparency = 1
-    LogText.Text = "\nVersion 2.2.0\n\nAdded:\n- Teleport Tab (Islands)\n- Remove TouchInterest\n\nImprovements:\n- General Stability improvements"
+    LogText.Text = "\nVersion 2.3.0\n\nAdded:\n- Anti Lava / Haunted\n- Teleport Tab (Islands)\n- Remove TouchInterest\n\nImprovements:\n- General Stability improvements"
     LogText.TextColor3 = theme.textMuted
     LogText.Font = Enum.Font.Gotham
     LogText.TextSize = 11
@@ -563,7 +568,6 @@ local function CreateGUI()
     KbBtn3.TextXAlignment = Enum.TextXAlignment.Left
     KbBtn3.Font = Enum.Font.GothamMedium
 
-    -- COMBAT TAB (Pages[2])
     local c_combat1, cont_combat1 = CreateCard(Pages[2].Page, "Fast Attack", 1)
     local FastAttackBtn = CreateToggle(cont_combat1)
 
@@ -573,14 +577,12 @@ local function CreateGUI()
     local c_combat3, cont_combat3 = CreateCard(Pages[2].Page, "Auto V4", 3)
     local AutoV4Btn = CreateToggle(cont_combat3)
 
-    -- TELEPORT TAB (Pages[3]) - Using new CreateFullButton
     local c_tp1, cont_tp1 = CreateCard(Pages[3].Page, "Locations", 1)
     local TpBtn1 = CreateFullButton(cont_tp1, "Mansion Flamingo (Inside)", 0)
     local TpBtn2 = CreateFullButton(cont_tp1, "Mansion Flamingo (Outside)", 34)
     local TpBtn3 = CreateFullButton(cont_tp1, "Haunted Ship (Outside)", 68)
     local TpBtn4 = CreateFullButton(cont_tp1, "Haunted Ship (Inside)", 102)
 
-    -- MOVE TAB (Pages[4])
     local c4, cont4 = CreateCard(Pages[4].Page, "Fly", 1)
     local FlyBtn = CreateToggle(cont4)
 
@@ -635,7 +637,6 @@ local function CreateGUI()
     local c9, cont9 = CreateCard(Pages[4].Page, "Spider Climb", 5)
     local SpiderClimbBtn = CreateToggle(cont9)
 
-    -- VISUALS TAB (Pages[5])
     local c10, cont10 = CreateCard(Pages[5].Page, "ESP", 1)
     local ESPBtn = CreateToggle(cont10)
     local c11, cont11 = CreateCard(Pages[5].Page, "Box ESP", 2)
@@ -648,7 +649,6 @@ local function CreateGUI()
     FOVSlider.Position = UDim2.new(0, 0, 0, 0)
     local ResetFOVBtn = CreateSmallButton(cont14, "RESET", 60, 0, 50, 24)
 
-    -- UTILITY TAB (Pages[6])
     local c15, cont15 = CreateCard(Pages[6].Page, "Anti AFK", 1)
     local AntiAFKBtn = CreateToggle(cont15)
 
@@ -672,9 +672,11 @@ local function CreateGUI()
     local ServerHopBtn = CreateSmallButton(cont17, "SERVER HOP", 80, 0, 80, 28)
     ServerHopBtn.Position = UDim2.new(1, -80, 0, 0)
 
-    -- Using new CreateFullButton for TouchInterest
     local c18, cont18 = CreateCard(Pages[6].Page, "Touch Interest", 4)
     local TouchBtn = CreateFullButton(cont18, "Remove TouchInterest", 0)
+
+    local c19, cont19 = CreateCard(Pages[6].Page, "Anti Lava/Haunted", 5)
+    local AntiLavaBtn = CreateToggle(cont19)
 
     -- Dragging Logic
     local dragging, dragInput, dragStart, startPos
@@ -705,6 +707,7 @@ local function CreateGUI()
         BoxESPBtn = BoxESPBtn, FullbrightBtn = FullbrightBtn,
         FOVLabel = FOVLabel, ResetFOVBtn = ResetFOVBtn, AntiAFKBtn = AntiAFKBtn,
         FPSBoostBtn = FPSBoostBtn, RejoinBtn = RejoinBtn, ServerHopBtn = ServerHopBtn, TouchBtn = TouchBtn,
+        AntiLavaBtn = AntiLavaBtn,
         SpectateBtn = SpectateBtn,
         KbBtn1 = KbBtn1, KbBtn2 = KbBtn2, KbBtn3 = KbBtn3
     }
@@ -721,6 +724,7 @@ local SpectateBtn = UI.SpectateBtn
 local KbBtn1, KbBtn2, KbBtn3 = UI.KbBtn1, UI.KbBtn2, UI.KbBtn3
 local AntiStunBtn, AutoV4Btn = UI.AntiStunBtn, UI.AutoV4Btn
 local TpBtn1, TpBtn2, TpBtn3, TpBtn4 = UI.TpBtn1, UI.TpBtn2, UI.TpBtn3, UI.TpBtn4
+local AntiLavaBtn = UI.AntiLavaBtn
 
 local playerButtons = {}
 
@@ -779,18 +783,39 @@ KbBtn3.MouseButton1Click:Connect(function() startRebind(KbBtn3, "HUB_KEY") end)
 
 Players.PlayerAdded:Connect(function(p)
     refreshPlayerList()
+    
     task.defer(function()
         local isOwner = false
-        for _, id in pairs(OwnerUserIds) do if p.UserId == id then isOwner = true; break end end
-        if isOwner then Notify("👑 Owner Joined", "noobez Hub Owner: " .. p.Name .. " joined the game", "Owner"); return end
+        for _, id in pairs(OwnerUserIds) do
+            if p.UserId == id then
+                isOwner = true
+                break
+            end
+        end
+        
+        if isOwner then
+            Notify("👑 Owner Joined", "noobez Hub Owner: " .. p.Name .. " joined the game", "Owner")
+            return
+        end
         
         local isStaff = false
-        for _, id in pairs(StaffUserIds) do if p.UserId == id then isStaff = true; break end end
-        if isStaff then Notify("🛡️ Staff Joined", "noobez Hub Staff: " .. p.Name .. " joined the game", "Staff"); return end
+        for _, id in pairs(StaffUserIds) do
+            if p.UserId == id then
+                isStaff = true
+                break
+            end
+        end
+        
+        if isStaff then
+            Notify("🛡️ Staff Joined", "noobez Hub Staff: " .. p.Name .. " joined the game", "Staff")
+            return
+        end
         
         if DangerGroupId ~= 0 then
             local success, rank = pcall(function() return p:GetRankInGroup(DangerGroupId) end)
-            if success and rank >= DangerMinRank then Notify("⚠️ DANGER ALERT", p.Name .. " joined! (Rank: " .. rank .. ")", "Danger") end
+            if success and rank >= DangerMinRank then
+                Notify("⚠️ DANGER ALERT", p.Name .. " joined! (Rank: " .. rank .. ")", "Danger")
+            end
         end
     end)
 end)
@@ -1028,6 +1053,52 @@ local function StartAutoV4()
 end
 local function StopAutoV4() if AutoV4Connection then task.cancel(AutoV4Connection) AutoV4Connection = nil end end
 
+-- ANTI LAVA / HAUNTED LOGIC
+local dangerousParts = {"Lava", "Haunted"}
+
+local function setupAntiLava(character)
+    local humanoid = character:WaitForChild("Humanoid")
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if table.find(dangerousParts, obj.Name) and obj:IsA("BasePart") then
+            obj.Touched:Connect(function(hit)
+                if AntiLavaEnabled and hit.Parent == character then
+                    humanoid.Health = humanoid.MaxHealth
+                end
+            end)
+        end
+    end
+end
+
+local function StartAntiLava()
+    if AntiLavaConnection then AntiLavaConnection:Disconnect() end
+    
+    if Players.LocalPlayer.Character then
+        setupAntiLava(Players.LocalPlayer.Character)
+    end
+    Players.LocalPlayer.CharacterAdded:Connect(function(char)
+        setupAntiLava(char)
+    end)
+
+    AntiLavaConnection = RunService.Stepped:Connect(function()
+        if AntiLavaEnabled and Players.LocalPlayer.Character then
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if table.find(dangerousParts, obj.Name) and obj:IsA("BasePart") then
+                    obj.CanTouch = false
+                end
+            end
+        end
+    end)
+end
+
+local function StopAntiLava()
+    if AntiLavaConnection then AntiLavaConnection:Disconnect() AntiLavaConnection = nil end
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if table.find(dangerousParts, obj.Name) and obj:IsA("BasePart") then
+            obj.CanTouch = true
+        end
+    end
+end
+
 -- === EXPLICIT TOGGLE FUNCTIONS ===
 local function ToggleFastAttack() FastAttackEnabled = not FastAttackEnabled; ToggleButtonStyle(FastAttackBtn, FastAttackEnabled); if FastAttackEnabled then StartFastAttack() else StopFastAttack() end end
 local function ToggleFly() FlyEnabled = not FlyEnabled; ToggleButtonStyle(FlyBtn, FlyEnabled); if FlyEnabled then StartFly() else StopFly() end end
@@ -1080,6 +1151,16 @@ TpBtn4.MouseButton1Click:Connect(function() TpTo(CFrame.new(918.576, 125.098, 32
 TouchBtn.MouseButton1Click:Connect(function()
     for _, d in pairs(game:GetDescendants()) do
         if d:IsA("TouchTransmitter") then d:Destroy() end
+    end
+end)
+
+AntiLavaBtn.MouseButton1Click:Connect(function()
+    AntiLavaEnabled = not AntiLavaEnabled
+    ToggleButtonStyle(AntiLavaBtn, AntiLavaEnabled)
+    if AntiLavaEnabled then
+        StartAntiLava()
+    else
+        StopAntiLava()
     end
 end)
 
