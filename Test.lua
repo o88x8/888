@@ -74,6 +74,9 @@ local AntiAFKConnection = nil
 -- Keybind Rebinding State
 local isRebinding = nil
 
+-- GUI Toggle Animation State
+local isTogglingGui = false
+
 -- Animation Variables
 local isAnimating = false
 local HubGui = nil
@@ -1006,6 +1009,44 @@ FPSBoostBtn.MouseButton1Click:Connect(BoostFPS)
 RejoinBtn.MouseButton1Click:Connect(RejoinServer)
 ServerHopBtn.MouseButton1Click:Connect(ServerHop)
 
+-- === GUI FADE TOGGLE ANIMATION ===
+local function ToggleHub()
+    if isTogglingGui then return end
+    isTogglingGui = true
+    
+    local stroke = MainFrameRef:FindFirstChildOfClass("UIStroke")
+    
+    if MainFrameRef.Visible then
+        -- Closing animation
+        local fadeOut = TweenService:Create(MainFrameRef, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
+        if stroke then
+            TweenService:Create(stroke, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Transparency = 1}):Play()
+        end
+        fadeOut:Play()
+        fadeOut.Completed:Connect(function()
+            MainFrameRef.Visible = false
+            -- Reset properties silently for next open
+            MainFrameRef.BackgroundTransparency = 0.05
+            if stroke then stroke.Transparency = 0.85 end
+            isTogglingGui = false
+        end)
+    else
+        -- Opening animation
+        MainFrameRef.Visible = true
+        MainFrameRef.BackgroundTransparency = 1
+        if stroke then stroke.Transparency = 1 end
+        
+        local fadeIn = TweenService:Create(MainFrameRef, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.05})
+        if stroke then
+            TweenService:Create(stroke, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0.85}):Play()
+        end
+        fadeIn:Play()
+        fadeIn.Completed:Connect(function()
+            isTogglingGui = false
+        end)
+    end
+end
+
 -- === KEYBINDS ===
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
@@ -1033,7 +1074,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == TOGGLE_KEY then ToggleFastAttack()
     elseif input.KeyCode == FLY_KEY then ToggleFly()
     elseif input.KeyCode == HUB_KEY then
-        MainFrameRef.Visible = not MainFrameRef.Visible
+        ToggleHub()
     end
 end)
 
