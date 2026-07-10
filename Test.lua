@@ -136,7 +136,7 @@ local function Notify(title, text, notifType)
     notifContainer.Size = UDim2.new(0, 300, 0, 70)
     notifContainer.BackgroundColor3 = theme.card
     notifContainer.BorderSizePixel = 0
-    notifContainer.AnchorPoint = Vector2.new(1, 0)
+    notifContainer.AnchorPoint = Vector3.new(1, 0)
     notifContainer.Position = UDim2.new(1, 20, 0, 20)
     notifContainer.Parent = HubGui
     Instance.new("UICorner", notifContainer).CornerRadius = UDim.new(0, 10)
@@ -271,7 +271,6 @@ local function CreateGUI()
     SideStroke.Thickness = 1
 
     local Pages = {}
-    -- Added "Teleport" as Tab 3, pushed others down
     local TabNames = {"Home", "Combat", "Teleport", "Move", "Visuals", "Utility"}
     local TabIcons = {"◎", "⚔", "📍", "✈", "◎", "⚙"}
 
@@ -435,6 +434,36 @@ local function CreateGUI()
         return Btn
     end
 
+    -- NEW: Full Width Button for Teleports/Utilities
+    local function CreateFullButton(parent, text, posY)
+        local Btn = Instance.new("TextButton")
+        Btn.Size = UDim2.new(1, 0, 0, 30)
+        Btn.Position = UDim2.new(0, 0, 0, posY)
+        Btn.BackgroundColor3 = theme.bg
+        Btn.BorderSizePixel = 0
+        Btn.Text = "   "..text
+        Btn.TextColor3 = theme.textMuted
+        Btn.Font = Enum.Font.GothamMedium
+        Btn.TextSize = 12
+        Btn.TextXAlignment = Enum.TextXAlignment.Left
+        Btn.AutoButtonColor = false
+        Btn.Parent = parent
+        Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+        local BtnStroke = Instance.new("UIStroke", Btn)
+        BtnStroke.Color = theme.stroke
+        BtnStroke.Transparency = 0.85
+
+        Btn.MouseEnter:Connect(function()
+            TweenService:Create(Btn, tweenInfo, {BackgroundColor3 = theme.card, TextColor3 = theme.textMain}):Play()
+            TweenService:Create(BtnStroke, tweenInfo, {Transparency = 0.5}):Play()
+        end)
+        Btn.MouseLeave:Connect(function()
+            TweenService:Create(Btn, tweenInfo, {BackgroundColor3 = theme.bg, TextColor3 = theme.textMuted}):Play()
+            TweenService:Create(BtnStroke, tweenInfo, {Transparency = 0.85}):Play()
+        end)
+        return Btn
+    end
+
     local function CreateSlider(parent, title, min, max, default, callback)
         local Container = Instance.new("Frame")
         Container.Size = UDim2.new(1, 0, 0, 50)
@@ -544,27 +573,12 @@ local function CreateGUI()
     local c_combat3, cont_combat3 = CreateCard(Pages[2].Page, "Auto V4", 3)
     local AutoV4Btn = CreateToggle(cont_combat3)
 
-    -- TELEPORT TAB (Pages[3])
+    -- TELEPORT TAB (Pages[3]) - Using new CreateFullButton
     local c_tp1, cont_tp1 = CreateCard(Pages[3].Page, "Locations", 1)
-    local TpBtn1 = CreateSmallButton(cont_tp1, "Mansion Flamingo (Inside)", 190, 0, 190, 24)
-    TpBtn1.Position = UDim2.new(0, 0, 0, 0)
-    TpBtn1.TextXAlignment = Enum.TextXAlignment.Left
-    TpBtn1.Font = Enum.Font.GothamMedium
-
-    local TpBtn2 = CreateSmallButton(cont_tp1, "Mansion Flamingo (Outside)", 190, 30, 190, 24)
-    TpBtn2.Position = UDim2.new(0, 0, 0, 30)
-    TpBtn2.TextXAlignment = Enum.TextXAlignment.Left
-    TpBtn2.Font = Enum.Font.GothamMedium
-
-    local TpBtn3 = CreateSmallButton(cont_tp1, "Haunted Ship (Outside)", 190, 60, 190, 24)
-    TpBtn3.Position = UDim2.new(0, 0, 0, 60)
-    TpBtn3.TextXAlignment = Enum.TextXAlignment.Left
-    TpBtn3.Font = Enum.Font.GothamMedium
-
-    local TpBtn4 = CreateSmallButton(cont_tp1, "Haunted Ship (Inside)", 190, 90, 190, 24)
-    TpBtn4.Position = UDim2.new(0, 0, 0, 90)
-    TpBtn4.TextXAlignment = Enum.TextXAlignment.Left
-    TpBtn4.Font = Enum.Font.GothamMedium
+    local TpBtn1 = CreateFullButton(cont_tp1, "Mansion Flamingo (Inside)", 0)
+    local TpBtn2 = CreateFullButton(cont_tp1, "Mansion Flamingo (Outside)", 34)
+    local TpBtn3 = CreateFullButton(cont_tp1, "Haunted Ship (Outside)", 68)
+    local TpBtn4 = CreateFullButton(cont_tp1, "Haunted Ship (Inside)", 102)
 
     -- MOVE TAB (Pages[4])
     local c4, cont4 = CreateCard(Pages[4].Page, "Fly", 1)
@@ -658,11 +672,9 @@ local function CreateGUI()
     local ServerHopBtn = CreateSmallButton(cont17, "SERVER HOP", 80, 0, 80, 28)
     ServerHopBtn.Position = UDim2.new(1, -80, 0, 0)
 
+    -- Using new CreateFullButton for TouchInterest
     local c18, cont18 = CreateCard(Pages[6].Page, "Touch Interest", 4)
-    local TouchBtn = CreateSmallButton(cont18, "Remove TouchInterest", 190, 0, 190, 24)
-    TouchBtn.Position = UDim2.new(0, 0, 0, 0)
-    TouchBtn.TextXAlignment = Enum.TextXAlignment.Left
-    TouchBtn.Font = Enum.Font.GothamMedium
+    local TouchBtn = CreateFullButton(cont18, "Remove TouchInterest", 0)
 
     -- Dragging Logic
     local dragging, dragInput, dragStart, startPos
@@ -1048,7 +1060,6 @@ InfiniteJumpBtn.MouseButton1Click:Connect(function() InfiniteJumpEnabled = not I
 NoclipBtn.MouseButton1Click:Connect(function() NoclipEnabled = not NoclipEnabled; ToggleButtonStyle(NoclipBtn, NoclipEnabled); if NoclipEnabled then StartNoclip() else StopNoclip() end end)
 SpiderClimbBtn.MouseButton1Click:Connect(function() SpiderClimbEnabled = not SpiderClimbEnabled; ToggleButtonStyle(SpiderClimbBtn, SpiderClimbEnabled); if SpiderClimbEnabled then StartSpiderClimb() else StopSpiderClimb() end end)
 
--- New Feature Connections (No Notifications)
 AntiStunBtn.MouseButton1Click:Connect(function()
     AntiStunEnabled = not AntiStunEnabled
     ToggleButtonStyle(AntiStunBtn, AntiStunEnabled)
@@ -1061,13 +1072,11 @@ AutoV4Btn.MouseButton1Click:Connect(function()
     if AutoV4Enabled then StartAutoV4() else StopAutoV4() end
 end)
 
--- Teleport Tab Connections
 TpBtn1.MouseButton1Click:Connect(function() TpTo(CFrame.new(2285, 38, 899)) end)
 TpBtn2.MouseButton1Click:Connect(function() TpTo(CFrame.new(-287, 306, 598)) end)
 TpBtn3.MouseButton1Click:Connect(function() TpTo(CFrame.new(-6500, 129, -123)) end)
 TpBtn4.MouseButton1Click:Connect(function() TpTo(CFrame.new(918.576, 125.098, 32851.527)) end)
 
--- Utility Tab Connections
 TouchBtn.MouseButton1Click:Connect(function()
     for _, d in pairs(game:GetDescendants()) do
         if d:IsA("TouchTransmitter") then d:Destroy() end
