@@ -9,7 +9,8 @@ local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 
 -- !!! YOUR SETTINGS HERE !!!
-local OwnerUserId = 1726291618 
+local OwnerUserIds = {1726291618, 0} -- ADD MULTIPLE OWNER IDs HERE (Separated by commas)
+local StaffUserIds = {0, 0}             -- ADD MULTIPLE STAFF IDs HERE (Separated by commas)
 local DangerGroupId = 4372130   
 local DangerMinRank = 2       
 -- !!! YOUR SETTINGS HERE !!!
@@ -130,14 +131,20 @@ end
 local function Notify(title, text, notifType)
     if not HubGui then return end
     local accentColor = theme.accentGreen
-    if notifType == "Danger" then accentColor = theme.accentRed end
+    if notifType == "Danger" then
+        accentColor = theme.accentRed
+    elseif notifType == "Owner" then
+        accentColor = Color3.fromRGB(255, 215, 0) -- Gold for Owner
+    elseif notifType == "Staff" then
+        accentColor = theme.accentBlue -- Blue for Staff
+    end
 
     local notifContainer = Instance.new("Frame")
-    notifContainer.Size = UDim2.new(0, 280, 0, 70)
+    notifContainer.Size = UDim2.new(0, 300, 0, 70)
     notifContainer.BackgroundColor3 = theme.card
     notifContainer.BorderSizePixel = 0
     notifContainer.AnchorPoint = Vector2.new(1, 0)
-    notifContainer.Position = UDim2.new(1, 20, 0, 20) -- Start off-screen right
+    notifContainer.Position = UDim2.new(1, 20, 0, 20)
     notifContainer.Parent = HubGui
     Instance.new("UICorner", notifContainer).CornerRadius = UDim.new(0, 10)
     
@@ -153,10 +160,6 @@ local function Notify(title, text, notifType)
     accentBar.BorderSizePixel = 0
     accentBar.Parent = notifContainer
     Instance.new("UICorner", accentBar).CornerRadius = UDim.new(0, 2)
-    local grad = Instance.new("UIGradient")
-    grad.Color = ColorSequence.new(accentColor, theme.accentBlue)
-    grad.Rotation = 90
-    grad.Parent = accentBar
 
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Size = UDim2.new(1, -25, 0, 25)
@@ -182,8 +185,7 @@ local function Notify(title, text, notifType)
     descLabel.Parent = notifContainer
 
     -- Slide in animation
-    local targetPos = UDim2.new(1, -290, 0, 20)
-    TweenService:Create(notifContainer, TweenInfo.new(0.4, Enum.EasingStyle.Back), {Position = targetPos}):Play()
+    TweenService:Create(notifContainer, TweenInfo.new(0.4, Enum.EasingStyle.Back), {Position = UDim2.new(1, -310, 0, 20)}):Play()
     
     task.delay(3.5, function()
         -- Slide out animation
@@ -740,22 +742,43 @@ KbBtn3.MouseButton1Click:Connect(function() startRebind(KbBtn3, "HUB_KEY") end)
 Players.PlayerAdded:Connect(function(p)
     refreshPlayerList()
     
-    -- Owner Join Notification (Green)
-    if p.UserId == OwnerUserId then
-        task.defer(function()
-            Notify("👑 Owner Joined", "noobez Hub owner joined!", "Owner")
-        end)
-    end
-    
-    -- Danger Alert Logic (Red)
-    if DangerGroupId ~= 0 then
-        task.defer(function()
+    task.defer(function()
+        -- 1. Check if Owner
+        local isOwner = false
+        for _, id in pairs(OwnerUserIds) do
+            if p.UserId == id then
+                isOwner = true
+                break
+            end
+        end
+        
+        if isOwner then
+            Notify("👑 Owner Joined", "noobez Hub Owner: " .. p.DisplayName .. " joined the game", "Owner")
+            return -- Don't check further if they are an owner
+        end
+        
+        -- 2. Check if Staff
+        local isStaff = false
+        for _, id in pairs(StaffUserIds) do
+            if p.UserId == id then
+                isStaff = true
+                break
+            end
+        end
+        
+        if isStaff then
+            Notify("🛡️ Staff Joined", "noobez Hub Staff: " .. p.DisplayName .. " joined the game", "Staff")
+            return -- Don't check danger if they are staff
+        end
+        
+        -- 3. Check Danger Alert (Group Rank)
+        if DangerGroupId ~= 0 then
             local success, rank = pcall(function() return p:GetRankInGroup(DangerGroupId) end)
             if success and rank >= DangerMinRank then
                 Notify("⚠️ DANGER ALERT", p.DisplayName .. " joined! (Rank: " .. rank .. ")", "Danger")
             end
-        end)
-    end
+        end
+    end)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
