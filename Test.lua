@@ -252,7 +252,7 @@ local function CreateGUI()
     Version.Size = UDim2.new(0, 40, 1, 0)
     Version.Position = UDim2.new(1, -50, 0, 0)
     Version.BackgroundTransparency = 1
-    Version.Text = "v2.1"
+    Version.Text = "v2.2"
     Version.TextColor3 = theme.textMuted
     Version.Font = Enum.Font.GothamMedium
     Version.TextSize = 11
@@ -271,8 +271,9 @@ local function CreateGUI()
     SideStroke.Thickness = 1
 
     local Pages = {}
-    local TabNames = {"Home", "Combat", "Move", "Visuals", "Utility"}
-    local TabIcons = {"◎", "⚔", "✈", "◎", "⚙"}
+    -- Added "Teleport" as Tab 3, pushed others down
+    local TabNames = {"Home", "Combat", "Teleport", "Move", "Visuals", "Utility"}
+    local TabIcons = {"◎", "⚔", "📍", "✈", "◎", "⚙"}
 
     for i, name in ipairs(TabNames) do
         local Tab = Instance.new("TextButton")
@@ -494,6 +495,7 @@ local function CreateGUI()
     end
 
     -- === BUILD PAGES ===
+    -- HOME TAB (Pages[1])
     local c1, cont1 = CreateCard(Pages[1].Page, "Welcome", 1)
     local WelText = Instance.new("TextLabel")
     WelText.Size = UDim2.new(1, 0, 0, 40)
@@ -515,7 +517,7 @@ local function CreateGUI()
     local LogText = Instance.new("TextLabel")
     LogText.Size = UDim2.new(1, 0, 0, 250)
     LogText.BackgroundTransparency = 1
-    LogText.Text = "\nVersion 2.1.0\n\nAdded:\n- Auto V4\n- Anti Stun\n\nImprovements:\n- General Stability improvements"
+    LogText.Text = "\nVersion 2.2.0\n\nAdded:\n- Teleport Tab (Islands)\n- Remove TouchInterest\n\nImprovements:\n- General Stability improvements"
     LogText.TextColor3 = theme.textMuted
     LogText.Font = Enum.Font.Gotham
     LogText.TextSize = 11
@@ -532,7 +534,7 @@ local function CreateGUI()
     KbBtn3.TextXAlignment = Enum.TextXAlignment.Left
     KbBtn3.Font = Enum.Font.GothamMedium
 
-    -- COMBAT TAB
+    -- COMBAT TAB (Pages[2])
     local c_combat1, cont_combat1 = CreateCard(Pages[2].Page, "Fast Attack", 1)
     local FastAttackBtn = CreateToggle(cont_combat1)
 
@@ -542,11 +544,33 @@ local function CreateGUI()
     local c_combat3, cont_combat3 = CreateCard(Pages[2].Page, "Auto V4", 3)
     local AutoV4Btn = CreateToggle(cont_combat3)
 
-    -- MOVE TAB
-    local c4, cont4 = CreateCard(Pages[3].Page, "Fly", 1)
+    -- TELEPORT TAB (Pages[3])
+    local c_tp1, cont_tp1 = CreateCard(Pages[3].Page, "Locations", 1)
+    local TpBtn1 = CreateSmallButton(cont_tp1, "Mansion Flamingo (Inside)", 190, 0, 190, 24)
+    TpBtn1.Position = UDim2.new(0, 0, 0, 0)
+    TpBtn1.TextXAlignment = Enum.TextXAlignment.Left
+    TpBtn1.Font = Enum.Font.GothamMedium
+
+    local TpBtn2 = CreateSmallButton(cont_tp1, "Mansion Flamingo (Outside)", 190, 30, 190, 24)
+    TpBtn2.Position = UDim2.new(0, 0, 0, 30)
+    TpBtn2.TextXAlignment = Enum.TextXAlignment.Left
+    TpBtn2.Font = Enum.Font.GothamMedium
+
+    local TpBtn3 = CreateSmallButton(cont_tp1, "Haunted Ship (Outside)", 190, 60, 190, 24)
+    TpBtn3.Position = UDim2.new(0, 0, 0, 60)
+    TpBtn3.TextXAlignment = Enum.TextXAlignment.Left
+    TpBtn3.Font = Enum.Font.GothamMedium
+
+    local TpBtn4 = CreateSmallButton(cont_tp1, "Haunted Ship (Inside)", 190, 90, 190, 24)
+    TpBtn4.Position = UDim2.new(0, 0, 0, 90)
+    TpBtn4.TextXAlignment = Enum.TextXAlignment.Left
+    TpBtn4.Font = Enum.Font.GothamMedium
+
+    -- MOVE TAB (Pages[4])
+    local c4, cont4 = CreateCard(Pages[4].Page, "Fly", 1)
     local FlyBtn = CreateToggle(cont4)
 
-    local c5, cont5 = CreateCard(Pages[3].Page, "Loop Teleport", 2)
+    local c5, cont5 = CreateCard(Pages[4].Page, "Loop Teleport", 2)
     local PlayerScrollFrame = Instance.new("ScrollingFrame")
     PlayerScrollFrame.Size = UDim2.new(1, 0, 0, 80)
     PlayerScrollFrame.Position = UDim2.new(0, 0, 0, 0) 
@@ -590,31 +614,31 @@ local function CreateGUI()
     SpectateLabel.TextXAlignment = Enum.TextXAlignment.Left
     SpectateLabel.Parent = cont5
 
-    local c6, cont6 = CreateCard(Pages[3].Page, "Infinite Jump", 3)
+    local c6, cont6 = CreateCard(Pages[4].Page, "Infinite Jump", 3)
     local InfiniteJumpBtn = CreateToggle(cont6)
-    local c8, cont8 = CreateCard(Pages[3].Page, "Noclip", 4)
+    local c8, cont8 = CreateCard(Pages[4].Page, "Noclip", 4)
     local NoclipBtn = CreateToggle(cont8)
-    local c9, cont9 = CreateCard(Pages[3].Page, "Spider Climb", 5)
+    local c9, cont9 = CreateCard(Pages[4].Page, "Spider Climb", 5)
     local SpiderClimbBtn = CreateToggle(cont9)
 
-    -- VISUALS TAB
-    local c10, cont10 = CreateCard(Pages[4].Page, "ESP", 1)
+    -- VISUALS TAB (Pages[5])
+    local c10, cont10 = CreateCard(Pages[5].Page, "ESP", 1)
     local ESPBtn = CreateToggle(cont10)
-    local c11, cont11 = CreateCard(Pages[4].Page, "Box ESP", 2)
+    local c11, cont11 = CreateCard(Pages[5].Page, "Box ESP", 2)
     local BoxESPBtn = CreateToggle(cont11)
-    local c13, cont13 = CreateCard(Pages[4].Page, "Fullbright", 3)
+    local c13, cont13 = CreateCard(Pages[5].Page, "Fullbright", 3)
     local FullbrightBtn = CreateToggle(cont13)
 
-    local c14, cont14 = CreateCard(Pages[4].Page, "FOV Changer", 4)
+    local c14, cont14 = CreateCard(Pages[5].Page, "FOV Changer", 4)
     local FOVSlider, FOVLabel = CreateSlider(cont14, "FOV", 30, 120, 70, function(val) FOVValue = val local cam = workspace.CurrentCamera if cam then cam.FieldOfView = val end end)
     FOVSlider.Position = UDim2.new(0, 0, 0, 0)
     local ResetFOVBtn = CreateSmallButton(cont14, "RESET", 60, 0, 50, 24)
 
-    -- UTILITY TAB
-    local c15, cont15 = CreateCard(Pages[5].Page, "Anti AFK", 1)
+    -- UTILITY TAB (Pages[6])
+    local c15, cont15 = CreateCard(Pages[6].Page, "Anti AFK", 1)
     local AntiAFKBtn = CreateToggle(cont15)
 
-    local c16, cont16 = CreateCard(Pages[5].Page, "FPS Booster", 2)
+    local c16, cont16 = CreateCard(Pages[6].Page, "FPS Booster", 2)
     local FPSBoostBtn = CreateSmallButton(cont16, "BOOST", 100, 0, 80, 28)
     FPSBoostBtn.Position = UDim2.new(1, -80, 0, 0)
     local FPSText = Instance.new("TextLabel")
@@ -628,11 +652,17 @@ local function CreateGUI()
     FPSText.TextXAlignment = Enum.TextXAlignment.Left
     FPSText.Parent = cont16
 
-    local c17, cont17 = CreateCard(Pages[5].Page, "Server Actions", 3)
+    local c17, cont17 = CreateCard(Pages[6].Page, "Server Actions", 3)
     local RejoinBtn = CreateSmallButton(cont17, "REJOIN", 170, 0, 80, 28)
     RejoinBtn.Position = UDim2.new(1, -170, 0, 0)
     local ServerHopBtn = CreateSmallButton(cont17, "SERVER HOP", 80, 0, 80, 28)
     ServerHopBtn.Position = UDim2.new(1, -80, 0, 0)
+
+    local c18, cont18 = CreateCard(Pages[6].Page, "Touch Interest", 4)
+    local TouchBtn = CreateSmallButton(cont18, "Remove TouchInterest", 190, 0, 190, 24)
+    TouchBtn.Position = UDim2.new(0, 0, 0, 0)
+    TouchBtn.TextXAlignment = Enum.TextXAlignment.Left
+    TouchBtn.Font = Enum.Font.GothamMedium
 
     -- Dragging Logic
     local dragging, dragInput, dragStart, startPos
@@ -656,12 +686,13 @@ local function CreateGUI()
     
     return {
         FastAttackBtn = FastAttackBtn, AntiStunBtn = AntiStunBtn, AutoV4Btn = AutoV4Btn,
+        TpBtn1 = TpBtn1, TpBtn2 = TpBtn2, TpBtn3 = TpBtn3, TpBtn4 = TpBtn4,
         FlyBtn = FlyBtn, TPToggleBtn = TPToggleBtn, TPStatus = TPStatus,
         PlayerScrollFrame = PlayerScrollFrame, ESPBtn = ESPBtn,
         InfiniteJumpBtn = InfiniteJumpBtn, NoclipBtn = NoclipBtn, SpiderClimbBtn = SpiderClimbBtn,
         BoxESPBtn = BoxESPBtn, FullbrightBtn = FullbrightBtn,
         FOVLabel = FOVLabel, ResetFOVBtn = ResetFOVBtn, AntiAFKBtn = AntiAFKBtn,
-        FPSBoostBtn = FPSBoostBtn, RejoinBtn = RejoinBtn, ServerHopBtn = ServerHopBtn,
+        FPSBoostBtn = FPSBoostBtn, RejoinBtn = RejoinBtn, ServerHopBtn = ServerHopBtn, TouchBtn = TouchBtn,
         SpectateBtn = SpectateBtn,
         KbBtn1 = KbBtn1, KbBtn2 = KbBtn2, KbBtn3 = KbBtn3
     }
@@ -673,10 +704,11 @@ local PlayerScrollFrame, ESPBtn = UI.PlayerScrollFrame, UI.ESPBtn
 local InfiniteJumpBtn, NoclipBtn, SpiderClimbBtn = UI.InfiniteJumpBtn, UI.NoclipBtn, UI.SpiderClimbBtn
 local BoxESPBtn, FullbrightBtn = UI.BoxESPBtn, UI.FullbrightBtn
 local FOVLabel, ResetFOVBtn, AntiAFKBtn = UI.FOVLabel, UI.ResetFOVBtn, UI.AntiAFKBtn
-local FPSBoostBtn, RejoinBtn, ServerHopBtn = UI.FPSBoostBtn, UI.RejoinBtn, UI.ServerHopBtn
+local FPSBoostBtn, RejoinBtn, ServerHopBtn, TouchBtn = UI.FPSBoostBtn, UI.RejoinBtn, UI.ServerHopBtn, UI.TouchBtn
 local SpectateBtn = UI.SpectateBtn
 local KbBtn1, KbBtn2, KbBtn3 = UI.KbBtn1, UI.KbBtn2, UI.KbBtn3
 local AntiStunBtn, AutoV4Btn = UI.AntiStunBtn, UI.AutoV4Btn
+local TpBtn1, TpBtn2, TpBtn3, TpBtn4 = UI.TpBtn1, UI.TpBtn2, UI.TpBtn3, UI.TpBtn4
 
 local playerButtons = {}
 
@@ -781,6 +813,15 @@ local function ToggleButtonStyle(Btn, state)
 end
 
 -- === STANDALONE LOGIC FUNCTIONS ===
+local function TpTo(targetCFrame)
+    pcall(function()
+        local char = Players.LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = targetCFrame
+        end
+    end)
+end
+
 local function AttackMultipleTargets(targets)
     pcall(function()
         if not targets or #targets == 0 then return end
@@ -1011,18 +1052,25 @@ SpiderClimbBtn.MouseButton1Click:Connect(function() SpiderClimbEnabled = not Spi
 AntiStunBtn.MouseButton1Click:Connect(function()
     AntiStunEnabled = not AntiStunEnabled
     ToggleButtonStyle(AntiStunBtn, AntiStunEnabled)
-    if AntiStunEnabled then
-        EnableAntiStun()
-    end
+    if AntiStunEnabled then EnableAntiStun() end
 end)
 
 AutoV4Btn.MouseButton1Click:Connect(function()
     AutoV4Enabled = not AutoV4Enabled
     ToggleButtonStyle(AutoV4Btn, AutoV4Enabled)
-    if AutoV4Enabled then
-        StartAutoV4()
-    else
-        StopAutoV4()
+    if AutoV4Enabled then StartAutoV4() else StopAutoV4() end
+end)
+
+-- Teleport Tab Connections
+TpBtn1.MouseButton1Click:Connect(function() TpTo(CFrame.new(2285, 38, 899)) end)
+TpBtn2.MouseButton1Click:Connect(function() TpTo(CFrame.new(-287, 306, 598)) end)
+TpBtn3.MouseButton1Click:Connect(function() TpTo(CFrame.new(-6500, 129, -123)) end)
+TpBtn4.MouseButton1Click:Connect(function() TpTo(CFrame.new(918.576, 125.098, 32851.527)) end)
+
+-- Utility Tab Connections
+TouchBtn.MouseButton1Click:Connect(function()
+    for _, d in pairs(game:GetDescendants()) do
+        if d:IsA("TouchTransmitter") then d:Destroy() end
     end
 end)
 
