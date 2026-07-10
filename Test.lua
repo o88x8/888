@@ -521,7 +521,6 @@ local function CreateGUI()
 
     local c3, cont3 = CreateCard(Pages[2].Page, "Fast Attack", 1)
     local FastAttackBtn = CreateToggle(cont3)
-    -- Anti-Knockback card REMOVED
 
     local c4, cont4 = CreateCard(Pages[3].Page, "Fly", 1)
     local FlyBtn = CreateToggle(cont4)
@@ -595,7 +594,6 @@ local function CreateGUI()
     local ESPBtn = CreateToggle(cont10)
     local c11, cont11 = CreateCard(Pages[4].Page, "Box ESP", 2)
     local BoxESPBtn = CreateToggle(cont11)
-    -- Tracer ESP card REMOVED
     local c13, cont13 = CreateCard(Pages[4].Page, "Fullbright", 3)
     local FullbrightBtn = CreateToggle(cont13)
 
@@ -774,7 +772,6 @@ Players.PlayerRemoving:Connect(function(player)
         TPStatus.Text = "Status: Player left"
     end
     if ESPObjects[player] then if ESPObjects[player].Parent then ESPObjects[player].Parent:Destroy() end ESPObjects[player] = nil end
-    -- FIXED: was BoxESPObjects[player].Parent:Destroy() which destroyed the character model
     if BoxESPObjects[player] then BoxESPObjects[player]:Destroy(); BoxESPObjects[player] = nil end
     refreshPlayerList()
 end)
@@ -831,8 +828,6 @@ local function StartFastAttack()
     end)
 end
 local function StopFastAttack() if FastAttackConnection then task.cancel(FastAttackConnection) FastAttackConnection = nil end end
-
--- Anti-Knockback functions REMOVED entirely
 
 local function EnableNoclip(c) originalCanCollide = {} for _, p in pairs(c:GetDescendants()) do if p:IsA("BasePart") then originalCanCollide[p] = p.CanCollide p.CanCollide = false end end end
 local function DisableNoclip(c) for p, v in pairs(originalCanCollide) do if p and p.Parent then p.CanCollide = v end end originalCanCollide = {} end
@@ -928,6 +923,14 @@ local function StartSpiderClimb()
 end
 local function StopSpiderClimb() if SpiderClimbConnection then SpiderClimbConnection:Disconnect() SpiderClimbConnection = nil end end
 
+-- Helper to check if a player is in StaffUserIds
+local function isStaffUser(userId)
+    for _, id in pairs(StaffUserIds) do
+        if id == userId then return true end
+    end
+    return false
+end
+
 local function ClearESP() for _, o in pairs(ESPObjects) do if o and o.Parent then o.Parent:Destroy() end end ESPObjects = {} end
 local function UpdateESP()
     local mc = Players.LocalPlayer.Character; local mhr = mc and mc:FindFirstChild("HumanoidRootPart")
@@ -937,12 +940,20 @@ local function UpdateESP()
             local c = p.Character; local h = c and c:FindFirstChild("Head"); local hm = c and c:FindFirstChild("Humanoid"); local hr = c and c:FindFirstChild("HumanoidRootPart")
             if h and hm and hr and hm.Health > 0 then
                 local dist, hp = math.floor((hr.Position - mhr.Position).Magnitude), math.floor(hm.Health)
+                local staffTag = ""
+                local isStaff = isStaffUser(p.UserId)
+                if isStaff then
+                    staffTag = '<font color="#ffd700">[noobez Staff]</font>\n'
+                end
+                local espText = staffTag .. '<font color="#00ff88">'..p.Name..'</font>\n<font color="#00bbff">HP: '..hp..' | '..dist..'m</font>'
                 if not ESPObjects[p] then
-                    local bb = Instance.new("BillboardGui"); bb.Adornee = h; bb.Size = UDim2.new(0, 120, 0, 40); bb.StudsOffset = Vector3.new(0, 3, 0); bb.AlwaysOnTop = true; bb.Parent = h
+                    -- Taller box for staff so the tag fits
+                    local bbSize = UDim2.new(0, 120, 0, isStaff and 55 or 40)
+                    local bb = Instance.new("BillboardGui"); bb.Adornee = h; bb.Size = bbSize; bb.StudsOffset = Vector3.new(0, 3, 0); bb.AlwaysOnTop = true; bb.Parent = h
                     local l = Instance.new("TextLabel"); l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = theme.textMain; l.TextStrokeTransparency = 0.5; l.TextStrokeColor3 = Color3.new(0,0,0); l.Font = Enum.Font.GothamBold; l.TextSize = 11; l.TextScaled = true
-                    l.RichText = true; l.Text = '<font color="#00ff88">'..p.DisplayName..'</font>\n<font color="#00bbff">HP: '..hp..' | '..dist..'m</font>'; l.Parent = bb; ESPObjects[p] = l
+                    l.RichText = true; l.Text = espText; l.Parent = bb; ESPObjects[p] = l
                 else
-                    ESPObjects[p].Text = '<font color="#00ff88">'..p.DisplayName..'</font>\n<font color="#00bbff">HP: '..hp..' | '..dist..'m</font>'; ESPObjects[p].Parent.Adornee = h
+                    ESPObjects[p].Text = espText; ESPObjects[p].Parent.Adornee = h
                 end
             else
                 if ESPObjects[p] then if ESPObjects[p].Parent then ESPObjects[p].Parent:Destroy() end ESPObjects[p] = nil end
@@ -951,8 +962,6 @@ local function UpdateESP()
     end
 end
 
--- FIXED ClearBoxESP: was obj.Parent:Destroy() which destroyed the player's character model
--- Now correctly destroys only the BillboardGui
 local function ClearBoxESP()
     for _, obj in pairs(BoxESPObjects) do
         if obj then
@@ -988,8 +997,6 @@ local function UpdateBoxESP()
         end
     end
 end
-
--- Tracer functions REMOVED entirely
 
 local function EnableFullbright() OriginalLighting = {Brightness = Lighting.Brightness, ClockTime = Lighting.ClockTime, FogEnd = Lighting.FogEnd, FogStart = Lighting.FogStart, Ambient = Lighting.Ambient, OutdoorAmbient = Lighting.OutdoorAmbient, GlobalShadows = Lighting.GlobalShadows}; Lighting.Brightness = 2; Lighting.ClockTime = 14; Lighting.FogEnd = 100000; Lighting.FogStart = 0; Lighting.Ambient = Color3.fromRGB(178, 178, 178); Lighting.OutdoorAmbient = Color3.fromRGB(178, 178, 178); Lighting.GlobalShadows = false end
 local function DisableFullbright() for prop, value in pairs(OriginalLighting) do pcall(function() Lighting[prop] = value end) end; OriginalLighting = {} end
@@ -1039,10 +1046,8 @@ local function ToggleBoxESP()
         ClearBoxESP()
     end
 end
--- ToggleTracer REMOVED entirely
 local function ToggleFullbright() FullbrightEnabled = not FullbrightEnabled; ToggleButtonStyle(FullbrightBtn, FullbrightEnabled); if FullbrightEnabled then EnableFullbright() else DisableFullbright() end end
 local function ToggleAntiAFK() AntiAFKEnabled = not AntiAFKEnabled; ToggleButtonStyle(AntiAFKBtn, AntiAFKEnabled); if AntiAFKEnabled then StartAntiAFK() else StopAntiAFK() end end
--- ToggleAntiKB REMOVED entirely
 
 -- === BUTTON CONNECTIONS ===
 FastAttackBtn.MouseButton1Click:Connect(ToggleFastAttack)
@@ -1052,10 +1057,8 @@ StrafeBtn.MouseButton1Click:Connect(ToggleStrafe)
 SpectateBtn.MouseButton1Click:Connect(ToggleSpectate)
 ESPBtn.MouseButton1Click:Connect(ToggleESP)
 BoxESPBtn.MouseButton1Click:Connect(ToggleBoxESP)
--- TracerBtn connection REMOVED
 FullbrightBtn.MouseButton1Click:Connect(ToggleFullbright)
 AntiAFKBtn.MouseButton1Click:Connect(ToggleAntiAFK)
--- AntiKBBtn connection REMOVED
 InfiniteJumpBtn.MouseButton1Click:Connect(function() InfiniteJumpEnabled = not InfiniteJumpEnabled; ToggleButtonStyle(InfiniteJumpBtn, InfiniteJumpEnabled); if InfiniteJumpEnabled then StartInfiniteJump() else StopInfiniteJump() end end)
 NoclipBtn.MouseButton1Click:Connect(function() NoclipEnabled = not NoclipEnabled; ToggleButtonStyle(NoclipBtn, NoclipEnabled); if NoclipEnabled then StartNoclip() else StopNoclip() end end)
 SpiderClimbBtn.MouseButton1Click:Connect(function() SpiderClimbEnabled = not SpiderClimbEnabled; ToggleButtonStyle(SpiderClimbBtn, SpiderClimbEnabled); if SpiderClimbEnabled then StartSpiderClimb() else StopSpiderClimb() end end)
@@ -1069,7 +1072,6 @@ ServerHopBtn.MouseButton1Click:Connect(ServerHop)
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
 
-    -- Key rebinding
     if isRebinding then
         if input.UserInputType == Enum.UserInputType.Keyboard then
             if isRebinding == "TOGGLE_KEY" then
