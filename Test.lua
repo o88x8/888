@@ -84,7 +84,6 @@ local MainFrameRef = nil
 
 -- === NEW FEATURES SETTINGS ===
 local AntiStunEnabled = false
-local UnbreakableEnabled = false
 local AutoV4Enabled = false
 local AutoV4Connection = nil
 
@@ -516,7 +515,7 @@ local function CreateGUI()
     local LogText = Instance.new("TextLabel")
     LogText.Size = UDim2.new(1, 0, 0, 250)
     LogText.BackgroundTransparency = 1
-    LogText.Text = "\nVersion 2.1.0\n\nAdded:\n- Auto V4\n- Anti Stun\n- Unbreakable (Anti-Kick)\n\nImprovements:\n- General Stability improvements"
+    LogText.Text = "\nVersion 2.1.0\n\nAdded:\n- Auto V4\n- Anti Stun\n\nImprovements:\n- General Stability improvements"
     LogText.TextColor3 = theme.textMuted
     LogText.Font = Enum.Font.Gotham
     LogText.TextSize = 11
@@ -540,11 +539,8 @@ local function CreateGUI()
     local c_combat2, cont_combat2 = CreateCard(Pages[2].Page, "Anti Stun", 2)
     local AntiStunBtn = CreateToggle(cont_combat2)
 
-    local c_combat3, cont_combat3 = CreateCard(Pages[2].Page, "Unbreakable", 3)
-    local UnbreakableBtn = CreateToggle(cont_combat3)
-
-    local c_combat4, cont_combat4 = CreateCard(Pages[2].Page, "Auto V4", 4)
-    local AutoV4Btn = CreateToggle(cont_combat4)
+    local c_combat3, cont_combat3 = CreateCard(Pages[2].Page, "Auto V4", 3)
+    local AutoV4Btn = CreateToggle(cont_combat3)
 
     -- MOVE TAB
     local c4, cont4 = CreateCard(Pages[3].Page, "Fly", 1)
@@ -659,7 +655,7 @@ local function CreateGUI()
     ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
     
     return {
-        FastAttackBtn = FastAttackBtn, AntiStunBtn = AntiStunBtn, UnbreakableBtn = UnbreakableBtn, AutoV4Btn = AutoV4Btn,
+        FastAttackBtn = FastAttackBtn, AntiStunBtn = AntiStunBtn, AutoV4Btn = AutoV4Btn,
         FlyBtn = FlyBtn, TPToggleBtn = TPToggleBtn, TPStatus = TPStatus,
         PlayerScrollFrame = PlayerScrollFrame, ESPBtn = ESPBtn,
         InfiniteJumpBtn = InfiniteJumpBtn, NoclipBtn = NoclipBtn, SpiderClimbBtn = SpiderClimbBtn,
@@ -680,7 +676,7 @@ local FOVLabel, ResetFOVBtn, AntiAFKBtn = UI.FOVLabel, UI.ResetFOVBtn, UI.AntiAF
 local FPSBoostBtn, RejoinBtn, ServerHopBtn = UI.FPSBoostBtn, UI.RejoinBtn, UI.ServerHopBtn
 local SpectateBtn = UI.SpectateBtn
 local KbBtn1, KbBtn2, KbBtn3 = UI.KbBtn1, UI.KbBtn2, UI.KbBtn3
-local AntiStunBtn, UnbreakableBtn, AutoV4Btn = UI.AntiStunBtn, UI.UnbreakableBtn, UI.AutoV4Btn
+local AntiStunBtn, AutoV4Btn = UI.AntiStunBtn, UI.AutoV4Btn
 
 local playerButtons = {}
 
@@ -965,22 +961,6 @@ local function EnableAntiStun()
     end)
 end
 
-local function EnableUnbreakable()
-    pcall(function()
-        local mt = getrawmetatable(game)
-        local old_namecall = mt.__namecall
-        setreadonly(mt, false)
-        mt.__namecall = newcclosure(function(self, ...)
-            local method = getnamecallmethod()
-            if method == "FireServer" or method == "InvokeServer" then
-                if tostring(self) == "Kick" or string.find(tostring(self):lower(), "kick") then return end
-            end
-            return old_namecall(self, ...)
-        end)
-        setreadonly(mt, true)
-    end)
-end
-
 local function StartAutoV4()
     if AutoV4Connection then task.cancel(AutoV4Connection) end
     AutoV4Connection = task.spawn(function()
@@ -1027,18 +1007,23 @@ InfiniteJumpBtn.MouseButton1Click:Connect(function() InfiniteJumpEnabled = not I
 NoclipBtn.MouseButton1Click:Connect(function() NoclipEnabled = not NoclipEnabled; ToggleButtonStyle(NoclipBtn, NoclipEnabled); if NoclipEnabled then StartNoclip() else StopNoclip() end end)
 SpiderClimbBtn.MouseButton1Click:Connect(function() SpiderClimbEnabled = not SpiderClimbEnabled; ToggleButtonStyle(SpiderClimbBtn, SpiderClimbEnabled); if SpiderClimbEnabled then StartSpiderClimb() else StopSpiderClimb() end end)
 
--- New Feature Connections
+-- New Feature Connections (No Notifications)
 AntiStunBtn.MouseButton1Click:Connect(function()
-    AntiStunEnabled = not AntiStunEnabled; ToggleButtonStyle(AntiStunBtn, AntiStunEnabled)
-    if AntiStunEnabled then EnableAntiStun(); Notify("Combat", "Anti Stun Enabled", "Staff") else Notify("Combat", "Anti Stun requires a rejoin to turn off.", "Danger") end
+    AntiStunEnabled = not AntiStunEnabled
+    ToggleButtonStyle(AntiStunBtn, AntiStunEnabled)
+    if AntiStunEnabled then
+        EnableAntiStun()
+    end
 end)
-UnbreakableBtn.MouseButton1Click:Connect(function()
-    UnbreakableEnabled = not UnbreakableEnabled; ToggleButtonStyle(UnbreakableBtn, UnbreakableEnabled)
-    if UnbreakableEnabled then EnableUnbreakable(); Notify("Combat", "Unbreakable (Anti-Kick) Enabled", "Staff") else Notify("Combat", "Unbreakable requires a rejoin to turn off.", "Danger") end
-end)
+
 AutoV4Btn.MouseButton1Click:Connect(function()
-    AutoV4Enabled = not AutoV4Enabled; ToggleButtonStyle(AutoV4Btn, AutoV4Enabled)
-    if AutoV4Enabled then StartAutoV4(); Notify("Combat", "Auto V4 Enabled", "Owner") else StopAutoV4(); Notify("Combat", "Auto V4 Disabled", "Danger") end
+    AutoV4Enabled = not AutoV4Enabled
+    ToggleButtonStyle(AutoV4Btn, AutoV4Enabled)
+    if AutoV4Enabled then
+        StartAutoV4()
+    else
+        StopAutoV4()
+    end
 end)
 
 ResetFOVBtn.MouseButton1Click:Connect(function() FOVValue = DefaultFOV; if workspace.CurrentCamera then workspace.CurrentCamera.FieldOfView = DefaultFOV end; FOVLabel.Text = "FOV: "..DefaultFOV end)
