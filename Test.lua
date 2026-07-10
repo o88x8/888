@@ -88,6 +88,7 @@ local AutoV4Enabled = false
 local AutoV4Connection = nil
 local AntiLavaEnabled = false
 local AntiLavaConnection = nil
+local antiLavaParts = {} -- Cache to prevent lag
 
 -- UI Theme Colors
 local theme = {
@@ -140,7 +141,7 @@ local function Notify(title, text, notifType)
     notifContainer.BorderSizePixel = 0
     notifContainer.AnchorPoint = Vector3.new(1, 0)
     notifContainer.Position = UDim2.new(1, 20, 0, 20)
-    notifContainer.ZIndex = 100 -- FORCE ON TOP
+    notifContainer.ZIndex = 100
     notifContainer.Parent = HubGui
     Instance.new("UICorner", notifContainer).CornerRadius = UDim.new(0, 10)
 
@@ -551,7 +552,7 @@ local function CreateGUI()
     local LogText = Instance.new("TextLabel")
     LogText.Size = UDim2.new(1, 0, 0, 270)
     LogText.BackgroundTransparency = 1
-    LogText.Text = "\nVersion 2.3.0\n\nAdded:\n- Anti Lava / Haunted\n- Teleport Tab (Islands)\n- Remove TouchInterest\n\nImprovements:\n- General Stability improvements"
+    LogText.Text = "\nVersion 2.3.0\n\nAdded:\n- Anti Lava / Haunted (Optimized)\n- Teleport Tab (Islands)\n- Remove TouchInterest\n\nImprovements:\n- Fixed Join Notifications\n- General Stability improvements"
     LogText.TextColor3 = theme.textMuted
     LogText.Font = Enum.Font.Gotham
     LogText.TextSize = 11
@@ -766,7 +767,7 @@ local function refreshPlayerList()
     for i, player in pairs(sorted) do createPlayerButton(player, i) end
     if targetPlayer and playerButtons[targetPlayer] then
         playerButtons[targetPlayer].BackgroundColor3 = theme.card
-        playerButtons[targetPlayer].TextColor3 = theme.accentGreen
+        playerHandlerPlayerButtons[targetPlayer].TextColor3 = theme.accentGreen
     end
 end
 
@@ -781,9 +782,8 @@ KbBtn1.MouseButton1Click:Connect(function() startRebind(KbBtn1, "TOGGLE_KEY") en
 KbBtn2.MouseButton1Click:Connect(function() startRebind(KbBtn2, "FLY_KEY") end)
 KbBtn3.MouseButton1Click:Connect(function() startRebind(KbBtn3, "HUB_KEY") end)
 
-Players.PlayerAdded:Connect(function(p)
-    refreshPlayerList()
-    
+-- CHECK FUNCTION FOR JOIN ALERTS
+local function checkPlayerForAlerts(p)
     task.defer(function()
         local isOwner = false
         for _, id in pairs(OwnerUserIds) do
@@ -818,7 +818,20 @@ Players.PlayerAdded:Connect(function(p)
             end
         end
     end)
+end
+
+-- LISTEN FOR NEW PLAYERS JOINING
+Players.PlayerAdded:Connect(function(p)
+    refreshPlayerList()
+    checkPlayerForAlerts(p)
 end)
+
+-- CHECK FOR PLAYERS ALREADY IN SERVER (Fixes notifications not working)
+for _, p in pairs(Players:GetPlayers()) do
+    if p ~= Players.LocalPlayer then
+        checkPlayerForAlerts(p)
+    end
+end
 
 Players.PlayerRemoving:Connect(function(player)
     if player == targetPlayer then
@@ -1051,52 +1064,44 @@ local function StartAutoV4()
         end
     end)
 end
-local function StopAutoV4() if AutoV4Connection then task.cancel(AutoV4Connection) AutoV4Connection = nil end end
+local function StopAutoV4() if AutoV4  then task.cancel(AutoV4Connection) AutoV4Connection = nil end end
 
--- ANTI LAVA / HAUNTED LOGIC
+-- ANTI LAVA / HAUNTED LOGIC (ZERO LAG VERSION)
 local dangerousParts = {"Lava", "Haunted"}
 
-local function setupAntiLava(character)
-    local humanoid = character:WaitForChild("Humanoid")
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if table.find(dangerousParts, obj.Name) and obj:IsA("BasePart") then
-            obj.Touched:Connect(function(hit)
-                if AntiLavaEnabled and hit.Parent == character then
-                    humanoid.Health = humanoid.MaxHealth
-                end
-            end)
-        end
+local function disableTouchForPart(obj)
+    if table.find(dangerousParts, obj.Name) and obj:IsA("BasePart") then
+        obj.CanTouch = false
+        table.insert(antiLavaParts, obj)
     end
 end
 
 local function StartAntiLava()
     if AntiLavaConnection then AntiLavaConnection:Disconnect() end
     
-    if Players.LocalPlayer.Character then
-        setupAntiLava(Players.LocalPlayer.Character)
+    -- Scan existing parts ONCE
+    for _, obj in pairs(workspace:GetDescendants()) do
+        disableTouchForPart(obj)
     end
-    Players.LocalPlayer.CharacterAdded:Connect(function(char)
-        setupAntiLava(char)
-    end)
-
-    AntiLavaConnection = RunService.Stepped:Connect(function()
-        if AntiLavaEnabled and Players.LocalPlayer.Character then
-            for _, obj in pairs(workspace:GetDescendants()) do
-                if table.find(dangerousParts, obj.Name) and obj:IsA("BasePart") then
-                    obj.CanTouch = false
-                end
-            end
+    
+    -- Listen for new parts loading in (0 lag)
+    AntiLavaConnection = workspace.DescendantAdded:Connect(function(obj)
+        if AntiLavaEnabled then
+            disableTouchForPart(obj)
         end
     end)
 end
 
 local function StopAntiLava()
     if AntiLavaConnection then AntiLavaConnection:Disconnect() AntiLavaConnection = nil end
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if table.find(dangerousParts, obj.Name) and obj:IsA("BasePart") then
-            obj.CanTouch = true
+    
+    -- Restore touch properties
+    for _, part in ipairs(antiLavaParts) do
+        if part and part.Parent then
+            part.CanTouch = true
         end
     end
+    table.clear(antiLavaParts)
 end
 
 -- === EXPLICIT TOGGLE FUNCTIONS ===
