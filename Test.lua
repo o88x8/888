@@ -21,11 +21,21 @@ local teleporting = false
 local targetPlayer = nil
 local teleportCooldown = 0.1
 
+-- Target Strafe
+local StrafeEnabled = false
+local StrafeConnection = nil
+local StrafeRadius = 15
+local StrafeSpeed = 150 -- Degrees per second
+
+-- Spectate
+local SpectateEnabled = false
+
 local FlyEnabled = false
 local FlySpeed = 250
 local FLY_KEY = Enum.KeyCode.G
 local FlyConnection = nil
 local originalCanCollide = {}
+local HUB_KEY = Enum.KeyCode.K
 
 local ESPEnabled = false
 local ESPConnection = nil
@@ -69,6 +79,14 @@ local DefaultFOV = 70
 local AntiAFKEnabled = false
 local AntiAFKConnection = nil
 
+-- Danger Alert
+local DangerAlertEnabled = false
+local DangerGroupId = 0
+local DangerMinRank = 250
+
+-- Keybind Rebinding State
+local isRebinding = nil 
+
 -- Animation Variables
 local isAnimating = false
 local HubGui = nil
@@ -104,6 +122,32 @@ local function ApplyHoverEffect(btn)
         if not btn:GetAttribute("Selected") then
             TweenService:Create(btn, tweenInfo, {BackgroundTransparency = 1}):Play()
         end
+    end)
+end
+
+-- Notification System
+local function Notify(title, text)
+    if not HubGui then return end
+    local notif = Instance.new("TextLabel")
+    notif.Size = UDim2.new(0, 250, 0, 60)
+    notif.BackgroundColor3 = theme.card
+    notif.TextColor3 = theme.textMain
+    notif.Text = title .. "\n" .. text
+    notif.Font = Enum.Font.GothamBold
+    notif.TextSize = 12
+    notif.TextWrapped = true
+    notif.Parent = HubGui
+    Instance.new("UICorner", notif).CornerRadius = UDim.new(0, 8)
+    local notifStroke = Instance.new("UIStroke", notif)
+    notifStroke.Color = theme.accentRed
+    notifStroke.Transparency = 0.5
+    
+    notif.Position = UDim2.new(1, 10, 0.5, -30)
+    TweenService:Create(notif, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Position = UDim2.new(1, -270, 0.5, -30)}):Play()
+    task.delay(3, function()
+        TweenService:Create(notif, TweenInfo.new(0.3), {Position = UDim2.new(1, 10, 0.5, -30)}):Play()
+        task.wait(0.3)
+        if notif then notif:Destroy() end
     end)
 end
 
@@ -267,7 +311,6 @@ local function CreateGUI()
     end
     SwitchTab(1)
 
-    -- Helper to create cards
     local function CreateCard(parent, title, order)
         local Card = Instance.new("Frame")
         Card.Size = UDim2.new(1, 0, 0, 80)
@@ -451,15 +494,22 @@ local function CreateGUI()
     WelText.Parent = cont1
 
     local c2, cont2 = CreateCard(Pages[1].Page, "Keybinds", 2)
-    local KbText = Instance.new("TextLabel")
-    KbText.Size = UDim2.new(1, 0, 0, 50)
-    KbText.BackgroundTransparency = 1
-    KbText.Text = "[U] Fast Attack\n[G] Fly\n[K] Toggle Hub"
-    KbText.TextColor3 = theme.textMuted
-    KbText.Font = Enum.Font.Gotham
-    KbText.TextSize = 11
-    KbText.TextXAlignment = Enum.TextXAlignment.Left
-    KbText.Parent = cont2
+    cont1.Size = UDim2.new(1, 0, 0, 40)
+    
+    local KbBtn1 = CreateSmallButton(cont2, "["..TOGGLE_KEY.Name.."] Fast Attack", 200, 0, 190, 24)
+    KbBtn1.Position = UDim2.new(0, 0, 0, 0)
+    KbBtn1.TextXAlignment = Enum.TextXAlignment.Left
+    KbBtn1.Font = Enum.Font.GothamMedium
+    
+    local KbBtn2 = CreateSmallButton(cont2, "["..FLY_KEY.Name.."] Fly", 200, 30, 190, 24)
+    KbBtn2.Position = UDim2.new(0, 0, 0, 30)
+    KbBtn2.TextXAlignment = Enum.TextXAlignment.Left
+    KbBtn2.Font = Enum.Font.GothamMedium
+    
+    local KbBtn3 = CreateSmallButton(cont2, "["..HUB_KEY.Name.."] Toggle Hub", 200, 60, 190, 24)
+    KbBtn3.Position = UDim2.new(0, 0, 0, 60)
+    KbBtn3.TextXAlignment = Enum.TextXAlignment.Left
+    KbBtn3.Font = Enum.Font.GothamMedium
 
     -- COMBAT (Page 2)
     local c3, cont3 = CreateCard(Pages[2].Page, "Fast Attack", 1)
@@ -503,6 +553,35 @@ local function CreateGUI()
     TPStatus.TextSize = 10
     TPStatus.TextXAlignment = Enum.TextXAlignment.Left
     TPStatus.Parent = cont5
+
+    -- Strafe & Spectate UI
+    local StrafeBtn = CreateToggle(cont5)
+    StrafeBtn.Position = UDim2.new(1, -100, 0, 120)
+    StrafeBtn.Size = UDim2.new(0, 100, 0, 24)
+    local StrafeLabel = Instance.new("TextLabel")
+    StrafeLabel.Size = UDim2.new(1, -110, 0, 24)
+    StrafeLabel.Position = UDim2.new(0, 0, 0, 120)
+    StrafeLabel.BackgroundTransparency = 1
+    StrafeLabel.Text = "Target Strafe"
+    StrafeLabel.TextColor3 = theme.textMuted
+    StrafeLabel.Font = Enum.Font.GothamMedium
+    StrafeLabel.TextSize = 11
+    StrafeLabel.TextXAlignment = Enum.TextXAlignment.Left
+    StrafeLabel.Parent = cont5
+
+    local SpectateBtn = CreateToggle(cont5)
+    SpectateBtn.Position = UDim2.new(1, -100, 0, 150)
+    SpectateBtn.Size = UDim2.new(0, 100, 0, 24)
+    local SpectateLabel = Instance.new("TextLabel")
+    SpectateLabel.Size = UDim2.new(1, -110, 0, 24)
+    SpectateLabel.Position = UDim2.new(0, 0, 0, 150)
+    SpectateLabel.BackgroundTransparency = 1
+    SpectateLabel.Text = "Spectate Target"
+    SpectateLabel.TextColor3 = theme.textMuted
+    SpectateLabel.Font = Enum.Font.GothamMedium
+    SpectateLabel.TextSize = 11
+    SpectateLabel.TextXAlignment = Enum.TextXAlignment.Left
+    SpectateLabel.Parent = cont5
 
     local c6, cont6 = CreateCard(Pages[3].Page, "Infinite Jump", 3)
     local InfiniteJumpBtn = CreateToggle(cont6)
@@ -555,6 +634,40 @@ local function CreateGUI()
     local ServerHopBtn = CreateSmallButton(cont17, "SERVER HOP", 80, 0, 80, 28)
     ServerHopBtn.Position = UDim2.new(1, -80, 0, 0)
 
+    -- Danger Alert Card
+    local c18, cont18 = CreateCard(Pages[5].Page, "Danger Alert", 4)
+    local DangerAlertBtn = CreateToggle(cont18)
+    
+    local GroupIdBox = Instance.new("TextBox")
+    GroupIdBox.Size = UDim2.new(0.5, -10, 0, 22)
+    GroupIdBox.Position = UDim2.new(0, 0, 0, 32)
+    GroupIdBox.BackgroundColor3 = theme.bg
+    GroupIdBox.BorderSizePixel = 0
+    GroupIdBox.Text = "Group ID"
+    GroupIdBox.PlaceholderText = "Group ID"
+    GroupIdBox.TextColor3 = theme.textMuted
+    GroupIdBox.PlaceholderColor3 = theme.textMuted
+    GroupIdBox.Font = Enum.Font.Gotham
+    GroupIdBox.TextSize = 10
+    GroupIdBox.Parent = cont18
+    Instance.new("UICorner", GroupIdBox).CornerRadius = UDim.new(0, 4)
+    Instance.new("UIPadding", GroupIdBox).PaddingLeft = UDim.new(0, 8)
+
+    local MinRankBox = Instance.new("TextBox")
+    MinRankBox.Size = UDim2.new(0.5, -10, 0, 22)
+    MinRankBox.Position = UDim2.new(0.5, 0, 0, 32)
+    MinRankBox.BackgroundColor3 = theme.bg
+    MinRankBox.BorderSizePixel = 0
+    MinRankBox.Text = "Min Rank"
+    MinRankBox.PlaceholderText = "Min Rank (e.g. 250)"
+    MinRankBox.TextColor3 = theme.textMuted
+    MinRankBox.PlaceholderColor3 = theme.textMuted
+    MinRankBox.Font = Enum.Font.Gotham
+    MinRankBox.TextSize = 10
+    MinRankBox.Parent = cont18
+    Instance.new("UICorner", MinRankBox).CornerRadius = UDim.new(0, 4)
+    Instance.new("UIPadding", MinRankBox).PaddingLeft = UDim.new(0, 8)
+
     -- Dragging Logic
     local dragging, dragInput, dragStart, startPos
     TitleBar.InputBegan:Connect(function(input)
@@ -580,48 +693,27 @@ local function CreateGUI()
     ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
     
     return {
-        FastAttackBtn = FastAttackBtn,
-        FlyBtn = FlyBtn,
-        TPToggleBtn = TPToggleBtn,
-        TPStatus = TPStatus,
-        PlayerScrollFrame = PlayerScrollFrame,
-        ESPBtn = ESPBtn,
-        AntiKBBtn = AntiKBBtn,
-        InfiniteJumpBtn = InfiniteJumpBtn,
-        NoclipBtn = NoclipBtn,
-        SpiderClimbBtn = SpiderClimbBtn,
-        BoxESPBtn = BoxESPBtn,
-        TracerBtn = TracerBtn,
-        FullbrightBtn = FullbrightBtn,
-        FOVLabel = FOVLabel,
-        ResetFOVBtn = ResetFOVBtn,
-        AntiAFKBtn = AntiAFKBtn,
-        FPSBoostBtn = FPSBoostBtn,
-        RejoinBtn = RejoinBtn,
-        ServerHopBtn = ServerHopBtn
+        FastAttackBtn = FastAttackBtn, FlyBtn = FlyBtn, TPToggleBtn = TPToggleBtn, TPStatus = TPStatus,
+        PlayerScrollFrame = PlayerScrollFrame, ESPBtn = ESPBtn, AntiKBBtn = AntiKBBtn,
+        InfiniteJumpBtn = InfiniteJumpBtn, NoclipBtn = NoclipBtn, SpiderClimbBtn = SpiderClimbBtn,
+        BoxESPBtn = BoxESPBtn, TracerBtn = TracerBtn, FullbrightBtn = FullbrightBtn,
+        FOVLabel = FOVLabel, ResetFOVBtn = ResetFOVBtn, AntiAFKBtn = AntiAFKBtn,
+        FPSBoostBtn = FPSBoostBtn, RejoinBtn = RejoinBtn, ServerHopBtn = ServerHopBtn,
+        StrafeBtn = StrafeBtn, SpectateBtn = SpectateBtn, DangerAlertBtn = DangerAlertBtn,
+        KbBtn1 = KbBtn1, KbBtn2 = KbBtn2, KbBtn3 = KbBtn3, GroupIdBox = GroupIdBox, MinRankBox = MinRankBox
     }
 end
 
 local UI = CreateGUI()
-local FastAttackBtn = UI.FastAttackBtn
-local FlyBtn = UI.FlyBtn
-local TPToggleBtn = UI.TPToggleBtn
-local TPStatus = UI.TPStatus
-local PlayerScrollFrame = UI.PlayerScrollFrame
-local ESPBtn = UI.ESPBtn
-local AntiKBBtn = UI.AntiKBBtn
-local InfiniteJumpBtn = UI.InfiniteJumpBtn
-local NoclipBtn = UI.NoclipBtn
-local SpiderClimbBtn = UI.SpiderClimbBtn
-local BoxESPBtn = UI.BoxESPBtn
-local TracerBtn = UI.TracerBtn
-local FullbrightBtn = UI.FullbrightBtn
-local FOVLabel = UI.FOVLabel
-local ResetFOVBtn = UI.ResetFOVBtn
-local AntiAFKBtn = UI.AntiAFKBtn
-local FPSBoostBtn = UI.FPSBoostBtn
-local RejoinBtn = UI.RejoinBtn
-local ServerHopBtn = UI.ServerHopBtn
+local FastAttackBtn, FlyBtn, TPToggleBtn, TPStatus = UI.FastAttackBtn, UI.FlyBtn, UI.TPToggleBtn, UI.TPStatus
+local PlayerScrollFrame, ESPBtn, AntiKBBtn = UI.PlayerScrollFrame, UI.ESPBtn, UI.AntiKBBtn
+local InfiniteJumpBtn, NoclipBtn, SpiderClimbBtn = UI.InfiniteJumpBtn, UI.NoclipBtn, UI.SpiderClimbBtn
+local BoxESPBtn, TracerBtn, FullbrightBtn = UI.BoxESPBtn, UI.TracerBtn, UI.FullbrightBtn
+local FOVLabel, ResetFOVBtn, AntiAFKBtn = UI.FOVLabel, UI.ResetFOVBtn, UI.AntiAFKBtn
+local FPSBoostBtn, RejoinBtn, ServerHopBtn = UI.FPSBoostBtn, UI.RejoinBtn, UI.ServerHopBtn
+local StrafeBtn, SpectateBtn, DangerAlertBtn = UI.StrafeBtn, UI.SpectateBtn, UI.DangerAlertBtn
+local KbBtn1, KbBtn2, KbBtn3 = UI.KbBtn1, UI.KbBtn2, UI.KbBtn3
+local GroupIdBox, MinRankBox = UI.GroupIdBox, UI.MinRankBox
 
 local playerButtons = {}
 
@@ -653,6 +745,8 @@ local function createPlayerButton(player, index)
         btn.BackgroundColor3 = theme.card
         btn.TextColor3 = theme.accentGreen
         if teleporting then TPStatus.Text = "Target: "..player.DisplayName end
+        if StrafeEnabled then TPStatus.Text = "Strafing: "..player.DisplayName end
+        if SpectateEnabled then TPStatus.Text = "Viewing: "..player.DisplayName end
     end)
     playerButtons[player] = btn
 end
@@ -670,11 +764,40 @@ local function refreshPlayerList()
     end
 end
 
-Players.PlayerAdded:Connect(function(p) refreshPlayerList() end)
+-- Keybind Rebinding Logic
+local function startRebind(btn, keyVarName, defaultKey)
+    if isRebinding then return end
+    isRebinding = keyVarName
+    btn.Text = "Press a key..."
+    btn.TextColor3 = theme.accentGreen
+end
+
+KbBtn1.MouseButton1Click:Connect(function() startRebind(KbBtn1, "TOGGLE_KEY", TOGGLE_KEY) end)
+KbBtn2.MouseButton1Click:Connect(function() startRebind(KbBtn2, "FLY_KEY", FLY_KEY) end)
+KbBtn3.MouseButton1Click:Connect(function() startRebind(KbBtn3, "HUB_KEY", HUB_KEY) end)
+
+Players.PlayerAdded:Connect(function(p)
+    refreshPlayerList()
+    -- Danger Alert Check
+    if DangerAlertEnabled and DangerGroupId ~= 0 then
+        task.defer(function()
+            local success, rank = pcall(function() return p:GetRankInGroup(DangerGroupId) end)
+            if success and rank >= DangerMinRank then
+                Notify("⚠️ DANGER ALERT", p.DisplayName .. " joined! (Rank: " .. rank .. ")")
+            end
+        end)
+    end
+end)
+
 Players.PlayerRemoving:Connect(function(player)
     if player == targetPlayer then
         teleporting = false; targetPlayer = nil
         ToggleButtonStyle(TPToggleBtn, false)
+        ToggleButtonStyle(StrafeBtn, false)
+        StrafeEnabled = false
+        ToggleButtonStyle(SpectateBtn, false)
+        SpectateEnabled = false
+        StopSpectate()
         TPStatus.Text = "Status: Player left"
     end
     if ESPObjects[player] then if ESPObjects[player].Parent then ESPObjects[player].Parent:Destroy() end ESPObjects[player] = nil end
@@ -688,20 +811,15 @@ local function ToggleButtonStyle(Btn, state)
     Btn:SetAttribute("On", state)
     if state then
         Btn.Text = "ON"
-        Btn.BackgroundColor3 = theme.bg -- Ensure base color is set under gradient
-        if not Btn:FindFirstChild("Grad") then CreateGradient().Parent = Btn end
+        Btn.BackgroundTransparency = 0
         TweenService:Create(Btn, tweenInfo, {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
         Btn.UIStroke.Transparency = 0.4
+        if not Btn:FindFirstChild("Grad") then CreateGradient().Parent = Btn end
     else
         Btn.Text = "OFF"
-        -- Destroy gradient FIRST to prevent color snapping glitches
-        local g = Btn:FindFirstChild("Grad") 
-        if g then g:Destroy() end
-        -- Set normal background color explicitly
-        Btn.BackgroundColor3 = theme.bg
-        -- Tween text back to normal
-        TweenService:Create(Btn, tweenInfo, {TextColor3 = theme.textMuted}):Play()
+        TweenService:Create(Btn, tweenInfo, {TextColor3 = theme.textMuted, BackgroundColor3 = theme.bg}):Play()
         Btn.UIStroke.Transparency = 0.8
+        local g = Btn:FindFirstChild("Grad") if g then g:Destroy() end
     end
 end
 
@@ -742,31 +860,18 @@ local function StartFastAttack()
         end
     end)
 end
-
-local function StopFastAttack() 
-    if FastAttackConnection then task.cancel(FastAttackConnection) FastAttackConnection = nil end 
-end
+local function StopFastAttack() if FastAttackConnection then task.cancel(FastAttackConnection) FastAttackConnection = nil end end
 
 -- Anti-Knockback Logic
 local function StartAntiKB()
     if AntiKBConnection then AntiKBConnection:Disconnect() end
     AntiKBConnection = RunService.Heartbeat:Connect(function()
         if not AntiKBEnabled then return end
-        local char = Players.LocalPlayer.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if hrp and hrp.Parent then
-            hrp.AssemblyLinearVelocity = Vector3.new(
-                hrp.AssemblyLinearVelocity.X * 0.05,
-                hrp.AssemblyLinearVelocity.Y > 5 and hrp.AssemblyLinearVelocity.Y * 0.5 or hrp.AssemblyLinearVelocity.Y,
-                hrp.AssemblyLinearVelocity.Z * 0.05
-            )
-        end
+        local char = Players.LocalPlayer.Character; local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp and hrp.Parent then hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X * 0.05, hrp.AssemblyLinearVelocity.Y > 5 and hrp.AssemblyLinearVelocity.Y * 0.5 or hrp.AssemblyLinearVelocity.Y, hrp.AssemblyLinearVelocity.Z * 0.05) end
     end)
 end
-
-local function StopAntiKB()
-    if AntiKBConnection then AntiKBConnection:Disconnect() AntiKBConnection = nil end
-end
+local function StopAntiKB() if AntiKBConnection then AntiKBConnection:Disconnect() AntiKBConnection = nil end end
 
 -- Fly Logic
 local function EnableNoclip(c) originalCanCollide = {} for _, p in pairs(c:GetDescendants()) do if p:IsA("BasePart") then originalCanCollide[p] = p.CanCollide p.CanCollide = false end end end
@@ -789,28 +894,54 @@ local function StartFly()
         r.AssemblyLinearVelocity = d * FlySpeed
     end)
 end
-
 local function StopFly()
     if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
     local c = Players.LocalPlayer.Character; local h = c and c:FindFirstChildOfClass("Humanoid"); local r = c and c:FindFirstChild("HumanoidRootPart")
     if h then h.PlatformStand = false end if r then r.AssemblyLinearVelocity = Vector3.zero end if c then DisableNoclip(c) end
 end
 
+-- Target Strafe Logic
+local function StartStrafe()
+    if StrafeConnection then StrafeConnection:Disconnect() end
+    StrafeConnection = RunService.Heartbeat:Connect(function(dt)
+        if not StrafeEnabled or not targetPlayer then return end
+        local char = Players.LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local tChar = targetPlayer.Character
+        local tHrp = tChar and tChar:FindFirstChild("HumanoidRootPart")
+        
+        if hrp and tHrp then
+            local angle = tick() * StrafeSpeed
+            local offset = CFrame.Angles(0, math.rad(angle), 0) * CFrame.new(StrafeRadius, 0, 0)
+            hrp.CFrame = tHrp.CFrame * offset
+        end
+    end)
+end
+local function StopStrafe() if StrafeConnection then StrafeConnection:Disconnect() StrafeConnection = nil end end
+
+-- Spectate Logic
+local function StartSpectate()
+    if not targetPlayer or not targetPlayer.Character then return end
+    local hum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if hum then workspace.CurrentCamera.CameraSubject = hum end
+end
+local function StopSpectate()
+    local char = Players.LocalPlayer.Character
+    if char then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then workspace.CurrentCamera.CameraSubject = hum end
+    end
+end
+
 -- Infinite Jump Logic
 local function StartInfiniteJump()
     if InfiniteJumpConnection then InfiniteJumpConnection:Disconnect() end
     InfiniteJumpConnection = UserInputService.JumpRequest:Connect(function()
-        local char = Players.LocalPlayer.Character
-        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
+        local char = Players.LocalPlayer.Character; local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+        if humanoid then humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end
     end)
 end
-
-local function StopInfiniteJump()
-    if InfiniteJumpConnection then InfiniteJumpConnection:Disconnect() InfiniteJumpConnection = nil end
-end
+local function StopInfiniteJump() if InfiniteJumpConnection then InfiniteJumpConnection:Disconnect() InfiniteJumpConnection = nil end end
 
 -- Noclip Logic
 local function StartNoclip()
@@ -818,26 +949,13 @@ local function StartNoclip()
     NoclipConnection = RunService.Stepped:Connect(function()
         if not NoclipEnabled then return end
         local char = Players.LocalPlayer.Character
-        if char then
-            for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
-                end
-            end
-        end
+        if char then for _, part in pairs(char:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = false end end end
     end)
 end
-
 local function StopNoclip()
     if NoclipConnection then NoclipConnection:Disconnect() NoclipConnection = nil end
     local char = Players.LocalPlayer.Character
-    if char then
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = true
-            end
-        end
-    end
+    if char then for _, part in pairs(char:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = true end end end
 end
 
 -- Spider Climb Logic
@@ -845,25 +963,11 @@ local function StartSpiderClimb()
     if SpiderClimbConnection then SpiderClimbConnection:Disconnect() end
     SpiderClimbConnection = RunService.Stepped:Connect(function()
         if not SpiderClimbEnabled then return end
-        local char = Players.LocalPlayer.Character
-        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-        local rootPart = char and char:FindFirstChild("HumanoidRootPart")
+        local char = Players.LocalPlayer.Character; local humanoid = char and char:FindFirstChildOfClass("Humanoid"); local rootPart = char and char:FindFirstChild("HumanoidRootPart")
         if not humanoid or not rootPart then return end
-        
-        local rayParams = RaycastParams.new()
-        rayParams.FilterDescendantsInstances = {char}
-        rayParams.FilterType = Enum.RaycastFilterType.Exclude
-        
-        local directions = {
-            rootPart.CFrame.LookVector,
-            -rootPart.CFrame.LookVector,
-            rootPart.CFrame.RightVector,
-            -rootPart.CFrame.RightVector
-        }
-        
-        for _, dir in pairs(directions) do
-            local result = workspace:Raycast(rootPart.Position, dir * 3, rayParams)
-            if result then
+        local rayParams = RaycastParams.new(); rayParams.FilterDescendantsInstances = {char}; rayParams.FilterType = Enum.RaycastFilterType.Exclude
+        for _, dir in pairs({rootPart.CFrame.LookVector, -rootPart.CFrame.LookVector, rootPart.CFrame.RightVector, -rootPart.CFrame.RightVector}) do
+            if workspace:Raycast(rootPart.Position, dir * 3, rayParams) then
                 humanoid:ChangeState(Enum.HumanoidStateType.Climbing)
                 rootPart.AssemblyLinearVelocity = rootPart.CFrame.UpVector * 20
                 break
@@ -871,14 +975,10 @@ local function StartSpiderClimb()
         end
     end)
 end
-
-local function StopSpiderClimb()
-    if SpiderClimbConnection then SpiderClimbConnection:Disconnect() SpiderClimbConnection = nil end
-end
+local function StopSpiderClimb() if SpiderClimbConnection then SpiderClimbConnection:Disconnect() SpiderClimbConnection = nil end end
 
 -- ESP Logic
 local function ClearESP() for _, o in pairs(ESPObjects) do if o and o.Parent then o.Parent:Destroy() end end ESPObjects = {} end
-
 local function UpdateESP()
     local mc = Players.LocalPlayer.Character; local mhr = mc and mc:FindFirstChild("HumanoidRootPart")
     if not mhr then return end
@@ -890,13 +990,9 @@ local function UpdateESP()
                 if not ESPObjects[p] then
                     local bb = Instance.new("BillboardGui"); bb.Adornee = h; bb.Size = UDim2.new(0, 120, 0, 40); bb.StudsOffset = Vector3.new(0, 3, 0); bb.AlwaysOnTop = true; bb.Parent = h
                     local l = Instance.new("TextLabel"); l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = theme.textMain; l.TextStrokeTransparency = 0.5; l.TextStrokeColor3 = Color3.new(0,0,0); l.Font = Enum.Font.GothamBold; l.TextSize = 11; l.TextScaled = true
-                    l.RichText = true
-                    l.Text = '<font color="#00ff88">'..p.DisplayName..'</font>\n<font color="#00bbff">HP: '..hp..' | '..dist..'m</font>'
-                    l.Parent = bb
-                    ESPObjects[p] = l
+                    l.RichText = true; l.Text = '<font color="#00ff88">'..p.DisplayName..'</font>\n<font color="#00bbff">HP: '..hp..' | '..dist..'m</font>'; l.Parent = bb; ESPObjects[p] = l
                 else
-                    ESPObjects[p].Text = '<font color="#00ff88">'..p.DisplayName..'</font>\n<font color="#00bbff">HP: '..hp..' | '..dist..'m</font>'
-                    ESPObjects[p].Parent.Adornee = h
+                    ESPObjects[p].Text = '<font color="#00ff88">'..p.DisplayName..'</font>\n<font color="#00bbff">HP: '..hp..' | '..dist..'m</font>'; ESPObjects[p].Parent.Adornee = h
                 end
             else
                 if ESPObjects[p] then if ESPObjects[p].Parent then ESPObjects[p].Parent:Destroy() end ESPObjects[p] = nil end
@@ -905,338 +1001,84 @@ local function UpdateESP()
     end
 end
 
--- Box ESP Logic
-local function ClearBoxESP()
-    for _, obj in pairs(BoxESPObjects) do
-        if obj and obj.Parent then obj.Parent:Destroy() end
-    end
-    BoxESPObjects = {}
+-- Box ESP / Tracers / Fullbright / FPS / Rejoin / Server Hop logic remains exactly the same to save space, assuming it runs fine from previous iterations.
+local function ClearBoxESP() for _, obj in pairs(BoxESPObjects) do if obj and obj.Parent then obj.Parent:Destroy() end end BoxESPObjects = {} end
+local function CreateBoxForPlayer(player) -- [Condensed for brevity, full logic is identical to previous]
+    local char = player.Character; if not char then return end; local hrp = char:FindFirstChild("HumanoidRootPart"); if not hrp then return end
+    if BoxESPObjects[player] then BoxESPObjects[player].Parent.Adornee = hrp; return end
+    local billboard = Instance.new("BillboardGui"); billboard.Name = "BoxESP_" .. player.Name; billboard.Adornee = hrp; billboard.Size = UDim2.new(4, 0, 5, 0); billboard.StudsOffset = Vector3.new(0, 0.5, 0); billboard.AlwaysOnTop = true; billboard.Parent = char
+    for _, n in pairs({"Top", "Bottom", "Left", "Right"}) do
+        local f = Instance.new("Frame"); f.Name = n; f.BackgroundColor3 = theme.accentGreen; f.BackgroundTransparency = 0.2; f.BorderSizePixel = 0; f.Parent = billboard
+        if n == "Top" then f.Size = UDim2.new(1, 0, 0, 2); f.Position = UDim2.new(0, 0, 0, 0)
+        elseif n == "Bottom" then f.Size = UDim2.new(1, 0, 0, 2); f.Position = UDim2.new(0, 0, 1, -2)
+        elseif n == "Left" then f.Size = UDim2.new(0, 2, 1, 0); f.Position = UDim2.new(0, 0, 0, 0)
+        else f.Size = UDim2.new(0, 2, 1, 0); f.Position = UDim2.new(1, -2, 0, 0) end
+    end; BoxESPObjects[player] = billboard
 end
-
-local function CreateBoxForPlayer(player)
-    local char = player.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    
-    if BoxESPObjects[player] then
-        BoxESPObjects[player].Parent.Adornee = hrp
-        return
-    end
-    
-    local billboard = Instance.new("BillboardGui")
-    billboard.Name = "BoxESP_" .. player.Name
-    billboard.Adornee = hrp
-    billboard.Size = UDim2.new(4, 0, 5, 0)
-    billboard.StudsOffset = Vector3.new(0, 0.5, 0)
-    billboard.AlwaysOnTop = true
-    billboard.Parent = char
-    
-    local boxColor = theme.accentGreen
-    
-    local top = Instance.new("Frame")
-    top.Name = "Top"
-    top.Size = UDim2.new(1, 0, 0, 2)
-    top.Position = UDim2.new(0, 0, 0, 0)
-    top.BackgroundColor3 = boxColor
-    top.BackgroundTransparency = 0.2
-    top.BorderSizePixel = 0
-    top.Parent = billboard
-    
-    local bottom = Instance.new("Frame")
-    bottom.Name = "Bottom"
-    bottom.Size = UDim2.new(1, 0, 0, 2)
-    bottom.Position = UDim2.new(0, 0, 1, -2)
-    bottom.BackgroundColor3 = boxColor
-    bottom.BackgroundTransparency = 0.2
-    bottom.BorderSizePixel = 0
-    bottom.Parent = billboard
-    
-    local left = Instance.new("Frame")
-    left.Name = "Left"
-    left.Size = UDim2.new(0, 2, 1, 0)
-    left.Position = UDim2.new(0, 0, 0, 0)
-    left.BackgroundColor3 = boxColor
-    left.BackgroundTransparency = 0.2
-    left.BorderSizePixel = 0
-    left.Parent = billboard
-    
-    local right = Instance.new("Frame")
-    right.Name = "Right"
-    right.Size = UDim2.new(0, 2, 1, 0)
-    right.Position = UDim2.new(1, -2, 0, 0)
-    right.BackgroundColor3 = boxColor
-    right.BackgroundTransparency = 0.2
-    right.BorderSizePixel = 0
-    right.Parent = billboard
-    
-    BoxESPObjects[player] = billboard
-end
-
-local function UpdateBoxESP()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= Players.LocalPlayer then
-            local char = player.Character
-            local humanoid = char and char:FindFirstChild("Humanoid")
-            if char and humanoid and humanoid.Health > 0 then
-                CreateBoxForPlayer(player)
-            else
-                if BoxESPObjects[player] then
-                    BoxESPObjects[player]:Destroy()
-                    BoxESPObjects[player] = nil
-                end
-            end
-        end
-    end
-end
-
--- Tracer ESP Logic
-local function CreateTracerFrame()
-    if TracerFrame then TracerFrame:Destroy() end
-    TracerFrame = Instance.new("Frame")
-    TracerFrame.Name = "Tracers"
-    TracerFrame.Size = UDim2.new(1, 0, 1, 0)
-    TracerFrame.BackgroundTransparency = 1
-    TracerFrame.ZIndex = 0
-    TracerFrame.Parent = HubGui
-end
-
-local function ClearTracers()
-    if TracerFrame then
-        TracerFrame:ClearAllChildren()
-    end
-end
-
+local function UpdateBoxESP() for _, player in pairs(Players:GetPlayers()) do if player ~= Players.LocalPlayer then local char = player.Character; local humanoid = char and char:FindFirstChild("Humanoid") if char and humanoid and humanoid.Health > 0 then CreateBoxForPlayer(player) else if BoxESPObjects[player] then BoxESPObjects[player]:Destroy(); BoxESPObjects[player] = nil end end end end end
+local function CreateTracerFrame() if TracerFrame then TracerFrame:Destroy() end; TracerFrame = Instance.new("Frame"); TracerFrame.Name = "Tracers"; TracerFrame.Size = UDim2.new(1, 0, 1, 0); TracerFrame.BackgroundTransparency = 1; TracerFrame.ZIndex = 0; TracerFrame.Parent = HubGui end
+local function ClearTracers() if TracerFrame then TracerFrame:ClearAllChildren() end end
 local function UpdateTracers()
-    if not TracerFrame then return end
-    TracerFrame:ClearAllChildren()
-    
-    local camera = workspace.CurrentCamera
-    local localChar = Players.LocalPlayer.Character
-    local localHRP = localChar and localChar:FindFirstChild("HumanoidRootPart")
+    if not TracerFrame then return end; TracerFrame:ClearAllChildren(); local camera = workspace.CurrentCamera; local localChar = Players.LocalPlayer.Character; local localHRP = localChar and localChar:FindFirstChild("HumanoidRootPart")
     if not localHRP then return end
-    
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= Players.LocalPlayer then
-            local char = player.Character
-            local head = char and char:FindFirstChild("Head")
-            local humanoid = char and char:FindFirstChild("Humanoid")
-            if head and humanoid and humanoid.Health > 0 then
-                local screenPos, onScreen = camera:WorldToScreenPoint(head.Position)
-                if onScreen then
-                    local line = Instance.new("Frame")
-                    line.BackgroundColor3 = theme.accentGreen
-                    line.BackgroundTransparency = 0.5
-                    line.BorderSizePixel = 0
-                    line.AnchorPoint = Vector2.new(0.5, 1)
-                    line.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
-                    
-                    local angle = math.deg(math.atan2(screenPos.X - camera.ViewportSize.X/2, camera.ViewportSize.Y - screenPos.Y))
-                    line.Rotation = angle
-                    
-                    local length = camera.ViewportSize.Y - screenPos.Y
-                    line.Size = UDim2.new(0, 1, 0, length)
-                    line.ZIndex = 0
-                    line.Parent = TracerFrame
-                end
-            end
-        end
-    end
+    for _, player in pairs(Players:GetPlayers()) do if player ~= Players.LocalPlayer then local char = player.Character; local head = char and char:FindFirstChild("Head"); local humanoid = char and char:FindFirstChild("Humanoid")
+        if head and humanoid and humanoid.Health > 0 then local screenPos, onScreen = camera:WorldToScreenPoint(head.Position) if onScreen then local line = Instance.new("Frame"); line.BackgroundColor3 = theme.accentGreen; line.BackgroundTransparency = 0.5; line.BorderSizePixel = 0; line.AnchorPoint = Vector2.new(0.5, 1); line.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y); line.Rotation = math.deg(math.atan2(screenPos.X - camera.ViewportSize.X/2, camera.ViewportSize.Y - screenPos.Y)); line.Size = UDim2.new(0, 1, 0, camera.ViewportSize.Y - screenPos.Y); line.ZIndex = 0; line.Parent = TracerFrame end end end end
 end
-
--- Fullbright Logic
-local function EnableFullbright()
-    OriginalLighting = {
-        Brightness = Lighting.Brightness,
-        ClockTime = Lighting.ClockTime,
-        FogEnd = Lighting.FogEnd,
-        FogStart = Lighting.FogStart,
-        Ambient = Lighting.Ambient,
-        OutdoorAmbient = Lighting.OutdoorAmbient,
-        GlobalShadows = Lighting.GlobalShadows
-    }
-    Lighting.Brightness = 2
-    Lighting.ClockTime = 14
-    Lighting.FogEnd = 100000
-    Lighting.FogStart = 0
-    Lighting.Ambient = Color3.fromRGB(178, 178, 178)
-    Lighting.OutdoorAmbient = Color3.fromRGB(178, 178, 178)
-    Lighting.GlobalShadows = false
-end
-
-local function DisableFullbright()
-    for prop, value in pairs(OriginalLighting) do
-        pcall(function()
-            Lighting[prop] = value
-        end)
-    end
-    OriginalLighting = {}
-end
-
--- Anti AFK Logic
-local function StartAntiAFK()
-    if AntiAFKConnection then AntiAFKConnection:Disconnect() end
-    AntiAFKConnection = Players.LocalPlayer.Idled:Connect(function()
-        VirtualUser:CaptureController()
-        VirtualUser:ClickButton2(Vector2.new())
-    end)
-end
-
-local function StopAntiAFK()
-    if AntiAFKConnection then AntiAFKConnection:Disconnect() AntiAFKConnection = nil end
-end
-
--- FPS Booster Logic
-local function BoostFPS()
-    Lighting.GlobalShadows = false
-    Lighting.FogEnd = 100000
-    Lighting.Brightness = 2
-    Lighting.ClockTime = 14
-    
-    for _, obj in pairs(Lighting:GetChildren()) do
-        if obj:IsA("PostEffect") or obj:IsA("Atmosphere") then
-            obj.Enabled = false
-        end
-    end
-    
-    pcall(function()
-        settings().QualityLevel = Enum.QualityLevel.Level01
-    end)
-end
-
--- Rejoin Server Logic
-local function RejoinServer()
-    pcall(function()
-        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Players.LocalPlayer)
-    end)
-end
-
--- Server Hop Logic
-local function ServerHop()
-    pcall(function()
-        local servers = HttpService:JSONDecode(game:HttpGet(
-            "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
-        ))
-        
-        for _, server in pairs(servers.data) do
-            if server.playing < server.maxPlayers and server.id ~= game.JobId then
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, Players.LocalPlayer)
-                return
-            end
-        end
-    end)
-end
+local function EnableFullbright() OriginalLighting = {Brightness = Lighting.Brightness, ClockTime = Lighting.ClockTime, FogEnd = Lighting.FogEnd, FogStart = Lighting.FogStart, Ambient = Lighting.Ambient, OutdoorAmbient = Lighting.OutdoorAmbient, GlobalShadows = Lighting.GlobalShadows}; Lighting.Brightness = 2; Lighting.ClockTime = 14; Lighting.FogEnd = 100000; Lighting.FogStart = 0; Lighting.Ambient = Color3.fromRGB(178, 178, 178); Lighting.OutdoorAmbient = Color3.fromRGB(178, 178, 178); Lighting.GlobalShadows = false end
+local function DisableFullbright() for prop, value in pairs(OriginalLighting) do pcall(function() Lighting[prop] = value end) end; OriginalLighting = {} end
+local function StartAntiAFK() if AntiAFKConnection then AntiAFKConnection:Disconnect() end; AntiAFKConnection = Players.LocalPlayer.Idled:Connect(function() VirtualUser:CaptureController(); VirtualUser:ClickButton2(Vector2.new()) end) end
+local function StopAntiAFK() if AntiAFKConnection then AntiAFKConnection:Disconnect() AntiAFKConnection = nil end end
+local function BoostFPS() Lighting.GlobalShadows = false; Lighting.FogEnd = 100000; Lighting.Brightness = 2; Lighting.ClockTime = 14; for _, obj in pairs(Lighting:GetChildren()) do if obj:IsA("PostEffect") or obj:IsA("Atmosphere") then obj.Enabled = false end end; pcall(function() settings().QualityLevel = Enum.QualityLevel.Level01 end) end
+local function RejoinServer() pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Players.LocalPlayer) end) end
+local function ServerHop() pcall(function() local servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")); for _, server in pairs(servers.data) do if server.playing < server.maxPlayers and server.id ~= game.JobId then TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, Players.LocalPlayer); return end end end) end
 
 -- === EXPLICIT TOGGLE FUNCTIONS ===
-
-local function ToggleFastAttack()
-    FastAttackEnabled = not FastAttackEnabled
-    ToggleButtonStyle(FastAttackBtn, FastAttackEnabled)
-    if FastAttackEnabled then StartFastAttack() else StopFastAttack() end
-end
-
-local function ToggleFly()
-    FlyEnabled = not FlyEnabled
-    ToggleButtonStyle(FlyBtn, FlyEnabled)
-    if FlyEnabled then StartFly() else StopFly() end
-end
-
+local function ToggleFastAttack() FastAttackEnabled = not FastAttackEnabled; ToggleButtonStyle(FastAttackBtn, FastAttackEnabled); if FastAttackEnabled then StartFastAttack() else StopFastAttack() end end
+local function ToggleFly() FlyEnabled = not FlyEnabled; ToggleButtonStyle(FlyBtn, FlyEnabled); if FlyEnabled then StartFly() else StopFly() end end
 local function ToggleTP()
     if not targetPlayer then TPStatus.Text = "Status: Select a player"; return end
-    teleporting = not teleporting
-    ToggleButtonStyle(TPToggleBtn, teleporting)
-    if teleporting then
-        TPStatus.Text = "Target: "..targetPlayer.DisplayName
-    else
-        TPStatus.Text = "Status: Idle"
+    teleporting = not teleporting; ToggleButtonStyle(TPToggleBtn, teleporting)
+    TPStatus.Text = teleporting and "Target: "..targetPlayer.DisplayName or "Status: Idle"
+end
+local function ToggleStrafe()
+    if not targetPlayer then TPStatus.Text = "Status: Select a player"; return end
+    StrafeEnabled = not StrafeEnabled; ToggleButtonStyle(StrafeBtn, StrafeEnabled)
+    if StrafeEnabled then StartStrafe() else StopStrafe() end
+    TPStatus.Text = StrafeEnabled and "Strafing: "..targetPlayer.DisplayName or "Status: Idle"
+end
+local function ToggleSpectate()
+    if not targetPlayer then TPStatus.Text = "Status: Select a player"; return end
+    SpectateEnabled = not SpectateEnabled; ToggleButtonStyle(SpectateBtn, SpectateEnabled)
+    if SpectateEnabled then StartSpectate() else StopSpectate() end
+    TPStatus.Text = SpectateEnabled and "Viewing: "..targetPlayer.DisplayName or "Status: Idle"
+end
+local function ToggleESP() ESPEnabled = not ESPEnabled; ToggleButtonStyle(ESPBtn, ESPEnabled); if ESPEnabled then if ESPConnection then ESPConnection:Disconnect() end; ESPConnection = RunService.RenderStepped:Connect(UpdateESP) else if ESPConnection then ESPConnection:Disconnect() ESPConnection = nil end; ClearESP() end end
+local function ToggleAntiKB() AntiKBEnabled = not AntiKBEnabled; ToggleButtonStyle(AntiKBBtn, AntiKBEnabled); if AntiKBEnabled then StartAntiKB() else StopAntiKB() end end
+local function ToggleInfiniteJump() InfiniteJumpEnabled = not InfiniteJumpEnabled; ToggleButtonStyle(InfiniteJumpBtn, InfiniteJumpEnabled); if InfiniteJumpEnabled then StartInfiniteJump() else StopInfiniteJump() end end
+local function ToggleNoclip() NoclipEnabled = not NoclipEnabled; ToggleButtonStyle(NoclipBtn, NoclipEnabled); if NoclipEnabled then StartNoclip() else StopNoclip() end end
+local function ToggleSpiderClimb() SpiderClimbEnabled = not SpiderClimbEnabled; ToggleButtonStyle(SpiderClimbBtn, SpiderClimbEnabled); if SpiderClimbEnabled then StartSpiderClimb() else StopSpiderClimb() end end
+local function ToggleBoxESP() BoxESPEnabled = not BoxESPEnabled; ToggleButtonStyle(BoxESPBtn, BoxESPEnabled); if BoxESPEnabled then if BoxESPConnection then BoxESPConnection:Disconnect() end; BoxESPConnection = RunService.RenderStepped:Connect(UpdateBoxESP) else if BoxESPConnection then BoxESPConnection:Disconnect() BoxESPConnection = nil end; ClearBoxESP() end end
+local function ToggleTracer() TracerEnabled = not TracerEnabled; ToggleButtonStyle(TracerBtn, TracerEnabled); if TracerEnabled then CreateTracerFrame(); if TracerConnection then TracerConnection:Disconnect() end; TracerConnection = RunService.RenderStepped:Connect(UpdateTracers) else if TracerConnection then TracerConnection:Disconnect() TracerConnection = nil end; ClearTracers(); if TracerFrame then TracerFrame:Destroy() TracerFrame = nil end end end
+local function ToggleFullbright() FullbrightEnabled = not FullbrightEnabled; ToggleButtonStyle(FullbrightBtn, FullbrightEnabled); if FullbrightEnabled then EnableFullbright() else DisableFullbright() end end
+local function ResetFOV() FOVValue = DefaultFOV; FOVLabel.Text = "FOV: " .. DefaultFOV; local cam = workspace.CurrentCamera; if cam then cam.FieldOfView = DefaultFOV end end
+local function ToggleAntiAFK() AntiAFKEnabled = not AntiAFKEnabled; ToggleButtonStyle(AntiAFKBtn, AntiAFKEnabled); if AntiAFKEnabled then StartAntiAFK() else StopAntiAFK() end end
+local function ToggleDangerAlert()
+    DangerAlertEnabled = not DangerAlertEnabled
+    ToggleButtonStyle(DangerAlertBtn, DangerAlertEnabled)
+    if DangerAlertEnabled then
+        pcall(function()
+            DangerGroupId = tonumber(GroupIdBox.Text)
+            DangerMinRank = tonumber(MinRankBox.Text)
+        end)
     end
-end
-
-local function ToggleESP()
-    ESPEnabled = not ESPEnabled
-    ToggleButtonStyle(ESPBtn, ESPEnabled)
-    if ESPEnabled then
-        if ESPConnection then ESPConnection:Disconnect() end
-        ESPConnection = RunService.RenderStepped:Connect(UpdateESP)
-    else
-        if ESPConnection then ESPConnection:Disconnect() ESPConnection = nil end
-        ClearESP()
-    end
-end
-
-local function ToggleAntiKB()
-    AntiKBEnabled = not AntiKBEnabled
-    ToggleButtonStyle(AntiKBBtn, AntiKBEnabled)
-    if AntiKBEnabled then StartAntiKB() else StopAntiKB() end
-end
-
-local function ToggleInfiniteJump()
-    InfiniteJumpEnabled = not InfiniteJumpEnabled
-    ToggleButtonStyle(InfiniteJumpBtn, InfiniteJumpEnabled)
-    if InfiniteJumpEnabled then StartInfiniteJump() else StopInfiniteJump() end
-end
-
-local function ToggleNoclip()
-    NoclipEnabled = not NoclipEnabled
-    ToggleButtonStyle(NoclipBtn, NoclipEnabled)
-    if NoclipEnabled then StartNoclip() else StopNoclip() end
-end
-
-local function ToggleSpiderClimb()
-    SpiderClimbEnabled = not SpiderClimbEnabled
-    ToggleButtonStyle(SpiderClimbBtn, SpiderClimbEnabled)
-    if SpiderClimbEnabled then StartSpiderClimb() else StopSpiderClimb() end
-end
-
-local function ToggleBoxESP()
-    BoxESPEnabled = not BoxESPEnabled
-    ToggleButtonStyle(BoxESPBtn, BoxESPEnabled)
-    if BoxESPEnabled then
-        if BoxESPConnection then BoxESPConnection:Disconnect() end
-        BoxESPConnection = RunService.RenderStepped:Connect(UpdateBoxESP)
-    else
-        if BoxESPConnection then BoxESPConnection:Disconnect() BoxESPConnection = nil end
-        ClearBoxESP()
-    end
-end
-
-local function ToggleTracer()
-    TracerEnabled = not TracerEnabled
-    ToggleButtonStyle(TracerBtn, TracerEnabled)
-    if TracerEnabled then
-        CreateTracerFrame()
-        if TracerConnection then TracerConnection:Disconnect() end
-        TracerConnection = RunService.RenderStepped:Connect(UpdateTracers)
-    else
-        if TracerConnection then TracerConnection:Disconnect() TracerConnection = nil end
-        ClearTracers()
-        if TracerFrame then TracerFrame:Destroy() TracerFrame = nil end
-    end
-end
-
-local function ToggleFullbright()
-    FullbrightEnabled = not FullbrightEnabled
-    ToggleButtonStyle(FullbrightBtn, FullbrightEnabled)
-    if FullbrightEnabled then EnableFullbright() else DisableFullbright() end
-end
-
-local function ResetFOV()
-    FOVValue = DefaultFOV
-    FOVLabel.Text = "FOV: " .. DefaultFOV
-    local cam = workspace.CurrentCamera
-    if cam then cam.FieldOfView = DefaultFOV end
-end
-
-local function ToggleAntiAFK()
-    AntiAFKEnabled = not AntiAFKEnabled
-    ToggleButtonStyle(AntiAFKBtn, AntiAFKEnabled)
-    if AntiAFKEnabled then StartAntiAFK() else StopAntiAFK() end
 end
 
 -- Connect UI Buttons
 FastAttackBtn.MouseButton1Click:Connect(ToggleFastAttack)
 FlyBtn.MouseButton1Click:Connect(ToggleFly)
 TPToggleBtn.MouseButton1Click:Connect(ToggleTP)
+StrafeBtn.MouseButton1Click:Connect(ToggleStrafe)
+SpectateBtn.MouseButton1Click:Connect(ToggleSpectate)
 ESPBtn.MouseButton1Click:Connect(ToggleESP)
 AntiKBBtn.MouseButton1Click:Connect(ToggleAntiKB)
 InfiniteJumpBtn.MouseButton1Click:Connect(ToggleInfiniteJump)
@@ -1250,6 +1092,7 @@ AntiAFKBtn.MouseButton1Click:Connect(ToggleAntiAFK)
 FPSBoostBtn.MouseButton1Click:Connect(BoostFPS)
 RejoinBtn.MouseButton1Click:Connect(RejoinServer)
 ServerHopBtn.MouseButton1Click:Connect(ServerHop)
+DangerAlertBtn.MouseButton1Click:Connect(ToggleDangerAlert)
 
 -- Loop TP Heartbeat
 local lastTP = 0
@@ -1258,10 +1101,7 @@ RunService.Heartbeat:Connect(function()
         local n = tick()
         if n - lastTP >= teleportCooldown then
             local c, t = Players.LocalPlayer.Character, targetPlayer.Character
-            if c and t then
-                local h1, h2 = c:FindFirstChild("HumanoidRootPart"), t:FindFirstChild("HumanoidRootPart")
-                if h1 and h2 then h1.CFrame = h2.CFrame * CFrame.new(0, 0, 3) lastTP = n end
-            end
+            if c and t then local h1, h2 = c:FindFirstChild("HumanoidRootPart"), t:FindFirstChild("HumanoidRootPart") if h1 and h2 then h1.CFrame = h2.CFrame * CFrame.new(0, 0, 3) lastTP = n end end
         end
     end
 end)
@@ -1270,57 +1110,55 @@ end)
 local function ToggleHubVisibility()
     if isAnimating or not HubGui or not MainFrameRef then return end
     isAnimating = true
-    
-    local targetSize = UDim2.new(0, 550, 0, 450)
-    local hiddenSize = UDim2.new(0, 480, 0, 380)
-    local targetTransparency = 0.05
-    local hiddenTransparency = 0.8
-
+    local targetSize = UDim2.new(0, 550, 0, 450); local hiddenSize = UDim2.new(0, 480, 0, 380); local targetTransparency = 0.05; local hiddenTransparency = 0.8
     if HubGui.Enabled then
-        local tweenOut = TweenService:Create(MainFrameRef, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-            Size = hiddenSize,
-            BackgroundTransparency = hiddenTransparency
-        })
-        tweenOut:Play()
-        tweenOut.Completed:Connect(function()
-            HubGui.Enabled = false
-            isAnimating = false
-        end)
+        local tweenOut = TweenService:Create(MainFrameRef, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = hiddenSize, BackgroundTransparency = hiddenTransparency})
+        tweenOut:Play(); tweenOut.Completed:Connect(function() HubGui.Enabled = false; isAnimating = false end)
     else
-        HubGui.Enabled = true
-        MainFrameRef.Size = hiddenSize
-        MainFrameRef.BackgroundTransparency = hiddenTransparency
-        
-        local tweenIn = TweenService:Create(MainFrameRef, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-            Size = targetSize,
-            BackgroundTransparency = targetTransparency
-        })
-        tweenIn:Play()
-        tweenIn.Completed:Connect(function()
-            isAnimating = false
-        end)
+        HubGui.Enabled = true; MainFrameRef.Size = hiddenSize; MainFrameRef.BackgroundTransparency = hiddenTransparency
+        local tweenIn = TweenService:Create(MainFrameRef, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = targetSize, BackgroundTransparency = targetTransparency})
+        tweenIn:Play(); tweenIn.Completed:Connect(function() isAnimating = false end)
     end
 end
 
 -- === KEYBINDS ===
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
+    
+    -- Keybind Rebinding Handler
+    if isRebinding and input.KeyCode ~= Enum.KeyCode.Unknown then
+        local varName = isRebinding
+        isRebinding = nil
+        
+        if varName == "TOGGLE_KEY then
+            TOGGLE_KEY = input.KeyCode
+            KbBtn1.Text = "["..input.KeyCode.Name.."] Fast Attack"
+        elseif varName == "FLY_KEY" then
+            FLY_KEY = input.KeyCode
+            KbBtn2.Text = "["..input.KeyCode.Name.."] Fly"
+        elseif varName == "HUB_KEY" then
+            HUB_KEY = input.KeyCode
+            KbBtn3.Text = "["..input.KeyCode.Name.."] Toggle Hub"
+        end
+        
+        KbBtn1.TextColor3 = theme.textMuted
+        KbBtn2.TextColor3 = theme.textMuted
+        KbBtn3.TextColor3 = theme.textMuted
+        return
+    end
+
     if input.KeyCode == TOGGLE_KEY then
         ToggleFastAttack()
     elseif input.KeyCode == FLY_KEY then
         ToggleFly()
-    elseif input.KeyCode == Enum.KeyCode.K then
+    elseif input.KeyCode == HUB_KEY then
         ToggleHubVisibility()
     end
 end)
 
 -- Store default FOV when camera loads
 local camera = workspace.CurrentCamera
-if camera then
-    DefaultFOV = camera.FieldOfView
-    FOVValue = camera.FieldOfView
-    FOVLabel.Text = "FOV: " .. math.floor(FOVValue)
-end
+if camera then DefaultFOV = camera.FieldOfView; FOVValue = camera.FieldOfView; FOVLabel.Text = "FOV: " .. math.floor(FOVValue) end
 
 print("=================================")
 print("noobez Hub v2.0 Loaded!")
