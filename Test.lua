@@ -27,6 +27,11 @@ local ESPEnabled = false
 local ESPConnection = nil
 local ESPObjects = {}
 
+-- Animation Variables
+local isAnimating = false
+local HubGui = nil
+local MainFrameRef = nil
+
 -- UI Theme Colors
 local theme = {
     bg = Color3.fromRGB(25, 28, 30),
@@ -71,6 +76,10 @@ local function CreateGUI()
     MainFrame.BackgroundColor3 = theme.bg
     MainFrame.BackgroundTransparency = 0.05
     MainFrame.Parent = ScreenGui
+
+    -- Save references for the toggle animation
+    MainFrameRef = MainFrame
+    HubGui = ScreenGui
 
     Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
     local MainStroke = Instance.new("UIStroke", MainFrame)
@@ -322,7 +331,6 @@ local function CreateGUI()
     local FlyBtn = CreateToggle(cont4)
 
     local c5, cont5 = CreateCard(Pages[3].Page, "Loop Teleport", 2)
-    -- Intentionally left out cont5.Size so it automatically fits the width properly with margins
     
     local PlayerScrollFrame = Instance.new("ScrollingFrame")
     PlayerScrollFrame.Size = UDim2.new(1, 0, 0, 80)
@@ -622,6 +630,48 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
+-- === OPEN / CLOSE ANIMATION ===
+local function ToggleHubVisibility()
+    -- Prevent spamming the key from breaking the animation
+    if isAnimating or not HubGui or not MainFrameRef then return end
+    isAnimating = true
+    
+    -- Target states
+    local targetSize = UDim2.new(0, 550, 0, 400)
+    local hiddenSize = UDim2.new(0, 480, 0, 340)
+    local targetTransparency = 0.05
+    local hiddenTransparency = 0.8
+
+    if HubGui.Enabled then
+        -- CLOSE ANIMATION
+        local tweenOut = TweenService:Create(MainFrameRef, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            Size = hiddenSize,
+            BackgroundTransparency = hiddenTransparency
+        })
+        tweenOut:Play()
+        tweenOut.Completed:Connect(function()
+            HubGui.Enabled = false
+            isAnimating = false
+        end)
+    else
+        -- OPEN ANIMATION
+        HubGui.Enabled = true
+        -- Set to hidden state instantly before animating in
+        MainFrameRef.Size = hiddenSize
+        MainFrameRef.BackgroundTransparency = hiddenTransparency
+        
+        -- EasingStyle.Back gives it a nice modern "pop/bounce" effect
+        local tweenIn = TweenService:Create(MainFrameRef, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Size = targetSize,
+            BackgroundTransparency = targetTransparency
+        })
+        tweenIn:Play()
+        tweenIn.Completed:Connect(function()
+            isAnimating = false
+        end)
+    end
+end
+
 -- === KEYBINDS ===
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
@@ -630,8 +680,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
     elseif input.KeyCode == FLY_KEY then
         ToggleFly()
     elseif input.KeyCode == Enum.KeyCode.K then
-        local gui = Players.LocalPlayer.PlayerGui:FindFirstChild("NoobezHub")
-        if gui then gui.Enabled = not gui.Enabled end
+        ToggleHubVisibility()
     end
 end)
 
