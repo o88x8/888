@@ -5,7 +5,9 @@ local ValidKeys = {
     ["NOOBEZ-ADMIN"] = true,
 }
 
-local WebhookURL = "https://discord.com/api/webhooks/1524916430246776916/P0LldyP0MbULmUIzViMi4PsGMFsNcX2SX-SUW-l44vPnucDI3ZPMgkZGjllFz1OLWAUp" -- Replace with your Discord webhook URL
+-- Replace with your webhook ID and token
+local WebhookID = "1524916430246776916"
+local WebhookToken = "P0LldyP0MbULmUIzViMi4PsGMFsNcX2SX-SUW-l44vPnucDI3ZPMgkZGjllFz1OLWAUp"
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -16,65 +18,86 @@ local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
+local Proxies = {
+    "https://hooks.hyra.io/api/webhooks/",
+    "https://hook.hyra.io/api/webhooks/",
+    "https://webhook.lewis.cyou/api/webhooks/",
+    "https://discord-webhook-proxy.onrender.com/api/webhooks/"
+}
+
 local function sendToDiscord(keyUsed)
-    local success, err = pcall(function()
-        local embed = {
-            title = "🔑 Key Verified Successfully",
-            color = 0x22C55E,
-            fields = {
-                {
-                    name = "👤 **Username**",
-                    value = LocalPlayer.Name,
-                    inline = true
+    for _, proxyBase in ipairs(Proxies) do
+        local success, err = pcall(function()
+            local url = proxyBase .. WebhookID .. "/" .. WebhookToken
+            
+            local embed = {
+                title = "🔑 Key Verified Successfully",
+                color = 0x22C55E,
+                fields = {
+                    {
+                        name = "👤 **Username**",
+                        value = LocalPlayer.Name,
+                        inline = true
+                    },
+                    {
+                        name = "🏷️ **Display Name**",
+                        value = LocalPlayer.DisplayName,
+                        inline = true
+                    },
+                    {
+                        name = "🔑 **Key Used**",
+                        value = "`" .. keyUsed .. "`",
+                        inline = false
+                    },
+                    {
+                        name = "🎮 **Place ID**",
+                        value = tostring(game.PlaceId),
+                        inline = true
+                    },
+                    {
+                        name = "🖥️ **Server ID**",
+                        value = "`" .. game.JobId .. "`",
+                        inline = true
+                    },
+                    {
+                        name = "📅 **Date & Time**",
+                        value = os.date("%Y-%m-%d %H:%M:%S"),
+                        inline = false
+                    }
                 },
-                {
-                    name = "🏷️ **Display Name**",
-                    value = LocalPlayer.DisplayName,
-                    inline = true
+                footer = {
+                    text = "Noobez Hub • Key System"
                 },
-                {
-                    name = "🔑 **Key Used**",
-                    value = "`" .. keyUsed .. "`",
-                    inline = false
-                },
-                {
-                    name = "🎮 **Place ID**",
-                    value = tostring(game.PlaceId),
-                    inline = true
-                },
-                {
-                    name = "🖥️ **Server ID**",
-                    value = "`" .. game.JobId .. "`",
-                    inline = true
-                },
-                {
-                    name = "📅 **Date & Time**",
-                    value = os.date("%Y-%m-%d %H:%M:%S"),
-                    inline = false
-                }
-            },
-            footer = {
-                text = "Noobez Hub • Key System",
-                icon_url = "https://create.roblox.com/favicon.ico"
-            },
-            timestamp = DateTime.now():ToIsoDate()
-        }
+                timestamp = DateTime.now():ToIsoDate()
+            }
 
-        local payload = {
-            embeds = {embed},
-            username = "Noobez Hub Logger"
-        }
+            local payload = HttpService:JSONEncode({
+                embeds = {embed},
+                username = "Noobez Hub Logger"
+            })
 
-        HttpService:PostAsync(
-            WebhookURL,
-            HttpService:JSONEncode(payload),
-            Enum.HttpContentType.ApplicationJson
-        )
-    end)
+            local response = HttpService:RequestAsync({
+                Url = url,
+                Method = "POST",
+                Headers = {
+                    ["Content-Type"] = "application/json"
+                },
+                Body = payload
+            })
 
-    if not success then
-        warn("[Noobez Hub] Webhook failed: " .. tostring(err))
+            if response.Success then
+                return true
+            else
+                error(response.StatusCode .. ": " .. (response.Body or "No body"))
+            end
+        end)
+
+        if success then
+            return
+        end
     end
+    
+    warn("[Noobez Hub] All webhook proxies failed")
 end
 
 local oldBlur = Lighting:FindFirstChild("KeySystemBlur")
@@ -421,7 +444,6 @@ local function verifyKey()
             Status.TextColor3 = Color3.fromRGB(120, 255, 140)
             Status.Text = "Key accepted."
             
-            -- Send webhook in a separate thread so it doesn't delay the UI
             task.spawn(function()
                 sendToDiscord(entered)
             end)
