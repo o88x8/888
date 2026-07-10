@@ -5,9 +5,8 @@ local ValidKeys = {
     ["NOOBEZ-ADMIN"] = true,
 }
 
--- Your webhook info (from https://discord.com/api/webhooks/ID/TOKEN)
-local WebhookID = "1524916430246776916"
-local WebhookToken = "P0LldyP0MbULmUIzViMi4PsGMFsNcX2SX-SUW-l44vPnucDI3ZPMgkZGjllFz1OLWAUp"
+local WebhookID = "YOUR_WEBHOOK_ID"
+local WebhookToken = "YOUR_WEBHOOK_TOKEN"
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -38,77 +37,124 @@ local function buildPayload(keyUsed)
     })
 end
 
-local function tryHttpService(url, payload)
-    local success, response = pcall(function()
-        return HttpService:RequestAsync({
-            Url = url,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = payload
-        })
-    end)
-    if success and response and response.Success then
-        return true
-    end
-    return false, success and response and (response.StatusCode .. ": " .. tostring(response.Body)) or tostring(response)
-end
-
-local function tryPostAsync(url, payload)
-    local success, err = pcall(function()
-        HttpService:PostAsync(url, payload, Enum.HttpContentType.ApplicationJson)
-    end)
-    return success, err
-end
-
-local function trySynRequest(url, payload)
-    if not syn then return false, "syn not available" end
-    local success, response = pcall(function()
-        return syn.request({
-            Url = url,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = payload
-        })
-    end)
-    if success and response and response.Success then
-        return true
-    end
-    return false, tostring(response)
-end
-
 local function sendToDiscord(keyUsed)
     local payload = buildPayload(keyUsed)
+    local url = "https://discord.com/api/webhooks/" .. WebhookID .. "/" .. WebhookToken
     
-    local endpoints = {
-        {url = "https://discord.com/api/webhooks/" .. WebhookID .. "/" .. WebhookToken, name = "Direct Discord", method = "syn"},
-        {url = "https://discord.com/api/webhooks/" .. WebhookID .. "/" .. WebhookToken, name = "Direct Discord", method = "request"},
-        {url = "https://discord.com/api/webhooks/" .. WebhookID .. "/" .. WebhookToken, name = "Direct Discord", method = "post"},
-        {url = "https://hooks.hyra.io/api/webhooks/" .. WebhookID .. "/" .. WebhookToken, name = "Hyra Proxy", method = "request"},
-        {url = "https://hooks.hyra.io/api/webhooks/" .. WebhookID .. "/" .. WebhookToken, name = "Hyra Proxy", method = "post"},
-        {url = "https://hook.hyra.io/api/webhooks/" .. WebhookID .. "/" .. WebhookToken, name = "Hyra Proxy 2", method = "request"},
-        {url = "https://hook.hyra.io/api/webhooks/" .. WebhookID .. "/" .. WebhookToken, name = "Hyra Proxy 2", method = "post"},
+    local methods = {
+        -- Xeno methods
+        function()
+            if request then
+                local res = request({
+                    Url = url,
+                    Method = "POST",
+                    Headers = {["Content-Type"] = "application/json"},
+                    Body = payload
+                })
+                return res and (res.StatusCode == 200 or res.StatusCode == 204)
+            end
+            return false
+        end,
+        function()
+            if http and http.request then
+                local res = http.request({
+                    Url = url,
+                    Method = "POST",
+                    Headers = {["Content-Type"] = "application/json"},
+                    Body = payload
+                })
+                return res and (res.StatusCode == 200 or res.StatusCode == 204)
+            end
+            return false
+        end,
+        function()
+            if http_post then
+                http_post(url, payload)
+                return true
+            end
+            return false
+        end,
+        -- Synapse fallback
+        function()
+            if syn and syn.request then
+                local res = syn.request({
+                    Url = url,
+                    Method = "POST",
+                    Headers = {["Content-Type"] = "application/json"},
+                    Body = payload
+                })
+                return res and (res.StatusCode == 200 or res.StatusCode == 204)
+            end
+            return false
+        end,
+        -- Standard Roblox methods
+        function()
+            local res = HttpService:RequestAsync({
+                Url = url,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = payload
+            })
+            return res.Success
+        end,
+        function()
+            HttpService:PostAsync(url, payload, Enum.HttpContentType.ApplicationJson)
+            return true
+        end,
     }
     
-    for _, endpoint in ipairs(endpoints) do
-        local success, err
-        
-        if endpoint.method == "syn" then
-            success, err = trySynRequest(endpoint.url, payload)
-        elseif endpoint.method == "request" then
-            success, err = tryHttpService(endpoint.url, payload)
-        elseif endpoint.method == "post" then
-            success, err = tryPostAsync(endpoint.url, payload)
-        end
-        
-        print("[Noobez] Tried " .. endpoint.name .. " (" .. endpoint.method .. "): " .. (success and "SUCCESS" or "FAILED - " .. tostring(err)))
-        
+    local methodNames = {"request()", "http.request()", "http_post()", "syn.request()", "RequestAsync()", "PostAsync()"}
+    
+    for i, method in ipairs(methods) do
+        local success, err = pcall(method)
+        print("[Noobez] " .. methodNames[i] .. ": " .. (success and "SUCCESS" or "FAILED - " .. tostring(err)))
         if success then
-            print("[Noobez] Webhook sent successfully via " .. endpoint.name)
+            print("[Noobez] Webhook sent via " .. methodNames[i])
             return
         end
     end
     
-    warn("[Noobez] All webhook methods failed!")
+    -- Try proxies with Xeno's request
+    local proxies = {
+        "https://hooks.hyra.io/api/webhooks/" .. WebhookID .. "/" .. WebhookToken,
+        "https://hook.hyra.io/api/webhooks/" .. WebhookID .. "/" .. WebhookToken,
+    }
+    
+    for _, proxyUrl in ipairs(proxies) do
+        if request then
+            local success, err = pcall(function()
+                local res = request({
+                    Url = proxyUrl,
+                    Method = "POST",
+                    Headers = {["Content-Type"] = "application/json"},
+                    Body = payload
+                })
+                if not (res and (res.StatusCode == 200 or res.StatusCode == 204)) then
+                    error("Status: " .. tostring(res and res.StatusCode))
+                end
+            end)
+            print("[Noobez] Proxy " .. proxyUrl:match("https://([^/]+)") .. ": " .. (success and "SUCCESS" or "FAILED - " .. tostring(err)))
+            if success then return end
+        end
+        
+        if http and http.request then
+            local success, err = pcall(function()
+                local res = http.request({
+                    Url = proxyUrl,
+                    Method = "POST",
+                    Headers = {["Content-Type"] = "application/json"},
+                    Body = payload
+                })
+                if not (res and (res.StatusCode == 200 or res.StatusCode == 204)) then
+                    error("Status: " .. tostring(res and res.StatusCode))
+                end
+            end)
+            print("[Noobez] Proxy " .. proxyUrl:match("https://([^/]+)") .. " (http.request): " .. (success and "SUCCESS" or "FAILED - " .. tostring(err)))
+            if success then return end
+        end
+    end
+    
+    warn("[Noobez] All methods failed completely")
 end
 
 local oldBlur = Lighting:FindFirstChild("KeySystemBlur")
@@ -339,7 +385,7 @@ local function showIntro()
 end
 
 local function loadMainScript()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/ew7b/noobez-Hub/refs/heads/main/main.lua"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/o88x8/888/refs/heads/888-Hub/Test.lua"))()
 end
 
 local function closeUI()
