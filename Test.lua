@@ -31,11 +31,6 @@ local ESPEnabled = false
 local ESPConnection = nil
 local ESPObjects = {}
 
--- Hitbox Expander
-local HitboxEnabled = false
-local HitboxSize = 10
-local originalHitboxSizes = {}
-
 -- Anti-Knockback
 local AntiKBEnabled = false
 local AntiKBConnection = nil
@@ -43,12 +38,6 @@ local AntiKBConnection = nil
 -- Infinite Jump
 local InfiniteJumpEnabled = false
 local InfiniteJumpConnection = nil
-
--- Speed Modifier
-local SpeedEnabled = false
-local SpeedValue = 50
-local DefaultSpeed = 16
-local SpeedConnection = nil
 
 -- Noclip
 local NoclipEnabled = false
@@ -324,6 +313,7 @@ local function CreateGUI()
         Btn.Size = UDim2.new(0, 100, 0, 28)
         Btn.Position = UDim2.new(1, -100, 0, 0)
         Btn.BackgroundColor3 = theme.bg
+        Btn.BackgroundTransparency = 0
         Btn.BorderSizePixel = 0
         Btn.Text = "OFF"
         Btn.TextColor3 = theme.textMuted
@@ -420,7 +410,6 @@ local function CreateGUI()
         SliderBtn.Parent = Container
         
         local dragging = false
-        local currentValue = default
         
         SliderBtn.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -437,7 +426,7 @@ local function CreateGUI()
         UserInputService.InputChanged:Connect(function(input)
             if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                 local relX = math.clamp((input.Position.X - SliderBg.AbsolutePosition.X) / SliderBg.AbsoluteSize.X, 0, 1)
-                currentValue = math.floor(min + (max - min) * relX)
+                local currentValue = math.floor(min + (max - min) * relX)
                 SliderFill.Size = UDim2.new(relX, 0, 1, 0)
                 Label.Text = title .. ": " .. currentValue
                 callback(currentValue)
@@ -476,12 +465,7 @@ local function CreateGUI()
     local c3, cont3 = CreateCard(Pages[2].Page, "Fast Attack", 1)
     local FastAttackBtn = CreateToggle(cont3)
 
-    local c3b, cont3b = CreateCard(Pages[2].Page, "Hitbox Expander", 2)
-    local HitboxBtn = CreateToggle(cont3b)
-    local HitboxSlider, HitboxLabel = CreateSlider(cont3b, "Size", 3, 30, 10, function(val) HitboxSize = val end)
-    HitboxSlider.Position = UDim2.new(0, 0, 0, 32)
-
-    local c3c, cont3c = CreateCard(Pages[2].Page, "Anti-Knockback", 3)
+    local c3c, cont3c = CreateCard(Pages[2].Page, "Anti-Knockback", 2)
     local AntiKBBtn = CreateToggle(cont3c)
 
     -- MOVEMENT (Page 3)
@@ -523,16 +507,10 @@ local function CreateGUI()
     local c6, cont6 = CreateCard(Pages[3].Page, "Infinite Jump", 3)
     local InfiniteJumpBtn = CreateToggle(cont6)
 
-    local c7, cont7 = CreateCard(Pages[3].Page, "Speed Modifier", 4)
-    local SpeedBtn = CreateToggle(cont7)
-    local SpeedSlider, SpeedLabel = CreateSlider(cont7, "Speed", 16, 300, 50, function(val) SpeedValue = val if SpeedEnabled then local h = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid") if h then h.WalkSpeed = val end end end)
-    SpeedSlider.Position = UDim2.new(0, 0, 0, 32)
-    local ResetSpeedBtn = CreateSmallButton(cont7, "RESET", 60, 32, 50, 24)
-
-    local c8, cont8 = CreateCard(Pages[3].Page, "Noclip", 5)
+    local c8, cont8 = CreateCard(Pages[3].Page, "Noclip", 4)
     local NoclipBtn = CreateToggle(cont8)
 
-    local c9, cont9 = CreateCard(Pages[3].Page, "Spider Climb", 6)
+    local c9, cont9 = CreateCard(Pages[3].Page, "Spider Climb", 5)
     local SpiderClimbBtn = CreateToggle(cont9)
 
     -- VISUALS (Page 4)
@@ -608,12 +586,8 @@ local function CreateGUI()
         TPStatus = TPStatus,
         PlayerScrollFrame = PlayerScrollFrame,
         ESPBtn = ESPBtn,
-        HitboxBtn = HitboxBtn,
         AntiKBBtn = AntiKBBtn,
         InfiniteJumpBtn = InfiniteJumpBtn,
-        SpeedBtn = SpeedBtn,
-        SpeedLabel = SpeedLabel,
-        ResetSpeedBtn = ResetSpeedBtn,
         NoclipBtn = NoclipBtn,
         SpiderClimbBtn = SpiderClimbBtn,
         BoxESPBtn = BoxESPBtn,
@@ -635,12 +609,8 @@ local TPToggleBtn = UI.TPToggleBtn
 local TPStatus = UI.TPStatus
 local PlayerScrollFrame = UI.PlayerScrollFrame
 local ESPBtn = UI.ESPBtn
-local HitboxBtn = UI.HitboxBtn
 local AntiKBBtn = UI.AntiKBBtn
 local InfiniteJumpBtn = UI.InfiniteJumpBtn
-local SpeedBtn = UI.SpeedBtn
-local SpeedLabel = UI.SpeedLabel
-local ResetSpeedBtn = UI.ResetSpeedBtn
 local NoclipBtn = UI.NoclipBtn
 local SpiderClimbBtn = UI.SpiderClimbBtn
 local BoxESPBtn = UI.BoxESPBtn
@@ -721,12 +691,13 @@ local function ToggleButtonStyle(Btn, state)
     Btn:SetAttribute("On", state)
     if state then
         Btn.Text = "ON"
+        Btn.BackgroundTransparency = 0
         TweenService:Create(Btn, tweenInfo, {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
         Btn.UIStroke.Transparency = 0.4
         if not Btn:FindFirstChild("Grad") then CreateGradient().Parent = Btn end
     else
         Btn.Text = "OFF"
-        TweenService:Create(Btn, tweenInfo, {TextColor3 = theme.textMuted}):Play()
+        TweenService:Create(Btn, tweenInfo, {TextColor3 = theme.textMuted, BackgroundColor3 = theme.bg}):Play()
         Btn.UIStroke.Transparency = 0.8
         local g = Btn:FindFirstChild("Grad") if g then g:Destroy() end
     end
@@ -772,55 +743,6 @@ end
 
 local function StopFastAttack() 
     if FastAttackConnection then task.cancel(FastAttackConnection) FastAttackConnection = nil end 
-end
-
--- Hitbox Expander Logic
-local function ExpandHitboxes()
-    local char = Players.LocalPlayer.Character
-    if not char then return end
-    
-    for _, tool in pairs(char:GetChildren()) do
-        if tool:IsA("Tool") then
-            for _, part in pairs(tool:GetDescendants()) do
-                if part:IsA("BasePart") and part.Name ~= "Handle" then
-                    if not originalHitboxSizes[part] then
-                        originalHitboxSizes[part] = {
-                            Size = part.Size,
-                            Transparency = part.Transparency,
-                            Massless = part.Massless
-                        }
-                    end
-                    part.Size = Vector3.new(HitboxSize, HitboxSize, HitboxSize)
-                    part.Massless = true
-                    part.Transparency = 0.7
-                end
-            end
-        end
-    end
-end
-
-local function ResetHitboxes()
-    for part, data in pairs(originalHitboxSizes) do
-        if part and part.Parent then
-            part.Size = data.Size
-            part.Transparency = data.Transparency
-            part.Massless = data.Massless
-        end
-    end
-    originalHitboxSizes = {}
-end
-
-local HitboxLoopConnection = nil
-local function StartHitboxLoop()
-    if HitboxLoopConnection then HitboxLoopConnection:Disconnect() end
-    HitboxLoopConnection = RunService.Heartbeat:Connect(function()
-        if HitboxEnabled then ExpandHitboxes() end
-    end)
-end
-
-local function StopHitboxLoop()
-    if HitboxLoopConnection then HitboxLoopConnection:Disconnect() HitboxLoopConnection = nil end
-    ResetHitboxes()
 end
 
 -- Anti-Knockback Logic
@@ -886,26 +808,6 @@ end
 
 local function StopInfiniteJump()
     if InfiniteJumpConnection then InfiniteJumpConnection:Disconnect() InfiniteJumpConnection = nil end
-end
-
--- Speed Modifier Logic
-local function StartSpeed()
-    if SpeedConnection then SpeedConnection:Disconnect() end
-    SpeedConnection = RunService.Heartbeat:Connect(function()
-        if not SpeedEnabled then return end
-        local char = Players.LocalPlayer.Character
-        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-        if humanoid and humanoid.Parent then
-            humanoid.WalkSpeed = SpeedValue
-        end
-    end)
-end
-
-local function StopSpeed()
-    if SpeedConnection then SpeedConnection:Disconnect() SpeedConnection = nil end
-    local char = Players.LocalPlayer.Character
-    local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-    if humanoid then humanoid.WalkSpeed = DefaultSpeed end
 end
 
 -- Noclip Logic
@@ -1263,12 +1165,6 @@ local function ToggleESP()
     end
 end
 
-local function ToggleHitbox()
-    HitboxEnabled = not HitboxEnabled
-    ToggleButtonStyle(HitboxBtn, HitboxEnabled)
-    if HitboxEnabled then StartHitboxLoop() else StopHitboxLoop() end
-end
-
 local function ToggleAntiKB()
     AntiKBEnabled = not AntiKBEnabled
     ToggleButtonStyle(AntiKBBtn, AntiKBEnabled)
@@ -1279,20 +1175,6 @@ local function ToggleInfiniteJump()
     InfiniteJumpEnabled = not InfiniteJumpEnabled
     ToggleButtonStyle(InfiniteJumpBtn, InfiniteJumpEnabled)
     if InfiniteJumpEnabled then StartInfiniteJump() else StopInfiniteJump() end
-end
-
-local function ToggleSpeed()
-    SpeedEnabled = not SpeedEnabled
-    ToggleButtonStyle(SpeedBtn, SpeedEnabled)
-    if SpeedEnabled then StartSpeed() else StopSpeed() end
-end
-
-local function ResetSpeed()
-    SpeedEnabled = false
-    ToggleButtonStyle(SpeedBtn, false)
-    SpeedValue = DefaultSpeed
-    SpeedLabel.Text = "Speed: " .. DefaultSpeed
-    StopSpeed()
 end
 
 local function ToggleNoclip()
@@ -1357,11 +1239,8 @@ FastAttackBtn.MouseButton1Click:Connect(ToggleFastAttack)
 FlyBtn.MouseButton1Click:Connect(ToggleFly)
 TPToggleBtn.MouseButton1Click:Connect(ToggleTP)
 ESPBtn.MouseButton1Click:Connect(ToggleESP)
-HitboxBtn.MouseButton1Click:Connect(ToggleHitbox)
 AntiKBBtn.MouseButton1Click:Connect(ToggleAntiKB)
 InfiniteJumpBtn.MouseButton1Click:Connect(ToggleInfiniteJump)
-SpeedBtn.MouseButton1Click:Connect(ToggleSpeed)
-ResetSpeedBtn.MouseButton1Click:Connect(ResetSpeed)
 NoclipBtn.MouseButton1Click:Connect(ToggleNoclip)
 SpiderClimbBtn.MouseButton1Click:Connect(ToggleSpiderClimb)
 BoxESPBtn.MouseButton1Click:Connect(ToggleBoxESP)
@@ -1443,20 +1322,6 @@ if camera then
     FOVValue = camera.FieldOfView
     FOVLabel.Text = "FOV: " .. math.floor(FOVValue)
 end
-
--- Store default walk speed when character loads
-local function OnCharacterAdded(char)
-    local humanoid = char:WaitForChild("Humanoid", 5)
-    if humanoid then
-        DefaultSpeed = humanoid.WalkSpeed
-    end
-end
-
-local localPlayer = Players.LocalPlayer
-if localPlayer.Character then
-    task.spawn(OnCharacterAdded, localPlayer.Character)
-end
-localPlayer.CharacterAdded:Connect(OnCharacterAdded)
 
 print("=================================")
 print("noobez Hub v2.0 Loaded!")
