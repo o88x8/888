@@ -8,6 +8,12 @@ local VirtualUser = game:GetService("VirtualUser")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 
+-- !!! CHANGE THESE SETTINGS HERE !!!
+local OwnerUserId = 1726291618 -- PUT YOUR ROBLOX USER ID HERE
+local DangerGroupId = 4372130 -- PUT THE GROUP ID HERE
+local DangerMinRank = 2 -- PUT THE MINIMUM RANK NUMBER HERE (e.g., 250 is usually High Rank)
+-- !!! CHANGE THESE SETTINGS HERE !!!
+
 -- Settings
 local FastAttackEnabled = false
 local FastAttackRange = 10^1000
@@ -78,11 +84,6 @@ local DefaultFOV = 70
 -- Anti AFK
 local AntiAFKEnabled = false
 local AntiAFKConnection = nil
-
--- Danger Alert
-local DangerAlertEnabled = false
-local DangerGroupId = 0
-local DangerMinRank = 250
 
 -- Keybind Rebinding State
 local isRebinding = nil 
@@ -597,38 +598,6 @@ local function CreateGUI()
     local ServerHopBtn = CreateSmallButton(cont17, "SERVER HOP", 80, 0, 80, 28)
     ServerHopBtn.Position = UDim2.new(1, -80, 0, 0)
 
-    local c18, cont18 = CreateCard(Pages[5].Page, "Danger Alert", 4)
-    local DangerAlertBtn = CreateToggle(cont18)
-    local GroupIdBox = Instance.new("TextBox")
-    GroupIdBox.Size = UDim2.new(0.5, -10, 0, 22)
-    GroupIdBox.Position = UDim2.new(0, 0, 0, 32)
-    GroupIdBox.BackgroundColor3 = theme.bg
-    GroupIdBox.BorderSizePixel = 0
-    GroupIdBox.Text = "Group ID"
-    GroupIdBox.PlaceholderText = "Group ID"
-    GroupIdBox.TextColor3 = theme.textMuted
-    GroupIdBox.PlaceholderColor3 = theme.textMuted
-    GroupIdBox.Font = Enum.Font.Gotham
-    GroupIdBox.TextSize = 10
-    GroupIdBox.Parent = cont18
-    Instance.new("UICorner", GroupIdBox).CornerRadius = UDim.new(0, 4)
-    Instance.new("UIPadding", GroupIdBox).PaddingLeft = UDim.new(0, 8)
-
-    local MinRankBox = Instance.new("TextBox")
-    MinRankBox.Size = UDim2.new(0.5, -10, 0, 22)
-    MinRankBox.Position = UDim2.new(0.5, 0, 0, 32)
-    MinRankBox.BackgroundColor3 = theme.bg
-    MinRankBox.BorderSizePixel = 0
-    MinRankBox.Text = "Min Rank"
-    MinRankBox.PlaceholderText = "Min Rank (e.g. 250)"
-    MinRankBox.TextColor3 = theme.textMuted
-    MinRankBox.PlaceholderColor3 = theme.textMuted
-    MinRankBox.Font = Enum.Font.Gotham
-    MinRankBox.TextSize = 10
-    MinRankBox.Parent = cont18
-    Instance.new("UICorner", MinRankBox).CornerRadius = UDim.new(0, 4)
-    Instance.new("UIPadding", MinRankBox).PaddingLeft = UDim.new(0, 8)
-
     -- Dragging Logic
     local dragging, dragInput, dragStart, startPos
     TitleBar.InputBegan:Connect(function(input)
@@ -656,8 +625,8 @@ local function CreateGUI()
         BoxESPBtn = BoxESPBtn, TracerBtn = TracerBtn, FullbrightBtn = FullbrightBtn,
         FOVLabel = FOVLabel, ResetFOVBtn = ResetFOVBtn, AntiAFKBtn = AntiAFKBtn,
         FPSBoostBtn = FPSBoostBtn, RejoinBtn = RejoinBtn, ServerHopBtn = ServerHopBtn,
-        StrafeBtn = StrafeBtn, SpectateBtn = SpectateBtn, DangerAlertBtn = DangerAlertBtn,
-        KbBtn1 = KbBtn1, KbBtn2 = KbBtn2, KbBtn3 = KbBtn3, GroupIdBox = GroupIdBox, MinRankBox = MinRankBox
+        StrafeBtn = StrafeBtn, SpectateBtn = SpectateBtn,
+        KbBtn1 = KbBtn1, KbBtn2 = KbBtn2, KbBtn3 = KbBtn3
     }
 end
 
@@ -668,9 +637,8 @@ local InfiniteJumpBtn, NoclipBtn, SpiderClimbBtn = UI.InfiniteJumpBtn, UI.Noclip
 local BoxESPBtn, TracerBtn, FullbrightBtn = UI.BoxESPBtn, UI.TracerBtn, UI.FullbrightBtn
 local FOVLabel, ResetFOVBtn, AntiAFKBtn = UI.FOVLabel, UI.ResetFOVBtn, UI.AntiAFKBtn
 local FPSBoostBtn, RejoinBtn, ServerHopBtn = UI.FPSBoostBtn, UI.RejoinBtn, UI.ServerHopBtn
-local StrafeBtn, SpectateBtn, DangerAlertBtn = UI.StrafeBtn, UI.SpectateBtn, UI.DangerAlertBtn
+local StrafeBtn, SpectateBtn = UI.StrafeBtn, UI.SpectateBtn
 local KbBtn1, KbBtn2, KbBtn3 = UI.KbBtn1, UI.KbBtn2, UI.KbBtn3
-local GroupIdBox, MinRankBox = UI.GroupIdBox, UI.MinRankBox
 
 local playerButtons = {}
 
@@ -730,7 +698,16 @@ KbBtn3.MouseButton1Click:Connect(function() startRebind(KbBtn3, "HUB_KEY") end)
 
 Players.PlayerAdded:Connect(function(p)
     refreshPlayerList()
-    if DangerAlertEnabled and DangerGroupId ~= 0 then
+    
+    -- Owner Join Notification
+    if p.UserId == OwnerUserId then
+        task.defer(function()
+            Notify("👑 Owner Joined", "noobez Hub owner joined!")
+        end)
+    end
+    
+    -- Danger Alert Logic (Always active in background)
+    if DangerGroupId ~= 0 then
         task.defer(function()
             local success, rank = pcall(function() return p:GetRankInGroup(DangerGroupId) end)
             if success and rank >= DangerMinRank then
@@ -999,13 +976,6 @@ local function ToggleTracer() TracerEnabled = not TracerEnabled; ToggleButtonSty
 local function ToggleFullbright() FullbrightEnabled = not FullbrightEnabled; ToggleButtonStyle(FullbrightBtn, FullbrightEnabled); if FullbrightEnabled then EnableFullbright() else DisableFullbright() end end
 local function ResetFOV() FOVValue = DefaultFOV; FOVLabel.Text = "FOV: " .. DefaultFOV; local cam = workspace.CurrentCamera; if cam then cam.FieldOfView = DefaultFOV end end
 local function ToggleAntiAFK() AntiAFKEnabled = not AntiAFKEnabled; ToggleButtonStyle(AntiAFKBtn, AntiAFKEnabled); if AntiAFKEnabled then StartAntiAFK() else StopAntiAFK() end end
-local function ToggleDangerAlert()
-    DangerAlertEnabled = not DangerAlertEnabled
-    ToggleButtonStyle(DangerAlertBtn, DangerAlertEnabled)
-    if DangerAlertEnabled then
-        pcall(function() DangerGroupId = tonumber(GroupIdBox.Text); DangerMinRank = tonumber(MinRankBox.Text) end)
-    end
-end
 
 FastAttackBtn.MouseButton1Click:Connect(ToggleFastAttack)
 FlyBtn.MouseButton1Click:Connect(ToggleFly)
@@ -1025,7 +995,6 @@ AntiAFKBtn.MouseButton1Click:Connect(ToggleAntiAFK)
 FPSBoostBtn.MouseButton1Click:Connect(BoostFPS)
 RejoinBtn.MouseButton1Click:Connect(RejoinServer)
 ServerHopBtn.MouseButton1Click:Connect(ServerHop)
-DangerAlertBtn.MouseButton1Click:Connect(ToggleDangerAlert)
 
 local lastTP = 0
 RunService.Heartbeat:Connect(function()
