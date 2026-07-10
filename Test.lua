@@ -6,8 +6,8 @@ local ValidKeys = {
 }
 
 -- Your webhook info (from https://discord.com/api/webhooks/ID/TOKEN)
-local WebhookID = "YOUR_WEBHOOK_ID"
-local WebhookToken = "YOUR_WEBHOOK_TOKEN"
+local WebhookID = "1524916430246776916"
+local WebhookToken = "P0LldyP0MbULmUIzViMi4PsGMFsNcX2SX-SUW-l44vPnucDI3ZPMgkZGjllFz1OLWAUp"
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -339,7 +339,7 @@ local function showIntro()
 end
 
 local function loadMainScript()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/o88x8/888/refs/heads/888-Hub/Test.lua"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/ew7b/noobez-Hub/refs/heads/main/main.lua"))()
 end
 
 local function closeUI()
