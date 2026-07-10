@@ -10,7 +10,7 @@ local HttpService = game:GetService("HttpService")
 
 -- !!! YOUR SETTINGS HERE !!!
 local OwnerUserIds = {1726291618, 1567644550}
-local StaffUserIds = {0, 0}
+local StaffUserIds = {} -- No staff yet
 local DangerGroupId = 4372130
 local DangerMinRank = 2
 -- !!! YOUR SETTINGS HERE !!!
@@ -88,7 +88,10 @@ local AutoV4Enabled = false
 local AutoV4Connection = nil
 local AntiLavaEnabled = false
 local AntiLavaConnection = nil
-local antiLavaParts = {} -- Cache to prevent lag
+local antiLavaParts = {}
+
+-- Notification stacking counter
+local activeNotifications = 0
 
 -- UI Theme Colors
 local theme = {
@@ -123,7 +126,7 @@ local function ApplyHoverEffect(btn)
     end)
 end
 
--- Modern Notification System (Top Right)
+-- Modern Notification System (Top Right) - FIXED
 local function Notify(title, text, notifType)
     if not HubGui then return end
     local accentColor = theme.accentGreen
@@ -135,19 +138,23 @@ local function Notify(title, text, notifType)
         accentColor = theme.accentBlue
     end
 
+    local yOffset = 20 + (activeNotifications * 80)
+    activeNotifications = activeNotifications + 1
+
     local notifContainer = Instance.new("Frame")
     notifContainer.Size = UDim2.new(0, 300, 0, 70)
     notifContainer.BackgroundColor3 = theme.card
     notifContainer.BorderSizePixel = 0
     notifContainer.AnchorPoint = Vector3.new(1, 0)
-    notifContainer.Position = UDim2.new(1, 20, 0, 20)
+    notifContainer.Position = UDim2.new(1, 20, 0, yOffset)
     notifContainer.ZIndex = 100
     notifContainer.Parent = HubGui
     Instance.new("UICorner", notifContainer).CornerRadius = UDim.new(0, 10)
 
     local notifStroke = Instance.new("UIStroke", notifContainer)
-    notifStroke.Color = theme.stroke
-    notifStroke.Transparency = 0.85
+    notifStroke.Color = accentColor
+    notifStroke.Transparency = 0.5
+    notifStroke.Thickness = 1
     notifStroke.ZIndex = 101
 
     local accentBar = Instance.new("Frame")
@@ -164,7 +171,7 @@ local function Notify(title, text, notifType)
     titleLabel.Position = UDim2.new(0, 15, 0, 10)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Text = title
-    titleLabel.TextColor3 = theme.textMain
+    titleLabel.TextColor3 = accentColor
     titleLabel.Font = Enum.Font.GothamBold
     titleLabel.TextSize = 13
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -184,10 +191,11 @@ local function Notify(title, text, notifType)
     descLabel.ZIndex = 103
     descLabel.Parent = notifContainer
 
-    TweenService:Create(notifContainer, TweenInfo.new(0.4, Enum.EasingStyle.Back), {Position = UDim2.new(1, -310, 0, 20)}):Play()
+    TweenService:Create(notifContainer, TweenInfo.new(0.4, Enum.EasingStyle.Back), {Position = UDim2.new(1, -310, 0, yOffset)}):Play()
 
     task.delay(3.5, function()
-        TweenService:Create(notifContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Position = UDim2.new(1, 20, 0, 20)}):Play()
+        activeNotifications = math.max(0, activeNotifications - 1)
+        TweenService:Create(notifContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Position = UDim2.new(1, 20, 0, yOffset)}):Play()
         task.wait(0.3)
         if notifContainer then notifContainer:Destroy() end
     end)
@@ -417,7 +425,7 @@ local function CreateGUI()
     local function CreateSmallButton(parent, text, posX, posY, width, height)
         local Btn = Instance.new("TextButton")
         Btn.Size = UDim2.new(0, width or 60, 0, height or 24)
-        Btn.Position = UDim2.new(1, -(posX or 60), 0, posY or 32)
+        Btn.Position = UDim2.new(1, -(posX or 60), 0, posY or 0)
         Btn.BackgroundColor3 = theme.bg
         Btn.BorderSizePixel = 0
         Btn.Text = text
@@ -548,6 +556,16 @@ local function CreateGUI()
     KbBtn1.TextXAlignment = Enum.TextXAlignment.Left
     KbBtn1.Font = Enum.Font.GothamMedium
 
+    local KbBtn2 = CreateSmallButton(cont2, "["..FLY_KEY.Name.."] Fly", 200, 30, 190, 24)
+    KbBtn2.Position = UDim2.new(0, 0, 0, 30)
+    KbBtn2.TextXAlignment = Enum.TextXAlignment.Left
+    KbBtn2.Font = Enum.Font.GothamMedium
+    
+    local KbBtn3 = CreateSmallButton(cont2, "["..HUB_KEY.Name.."] Toggle Hub", 200, 60, 190, 24)
+    KbBtn3.Position = UDim2.new(0, 0, 0, 60)
+    KbBtn3.TextXAlignment = Enum.TextXAlignment.Left
+    KbBtn3.Font = Enum.Font.GothamMedium
+
     local c3, cont3 = CreateCard(Pages[1].Page, "Update Log", 3)
     local LogText = Instance.new("TextLabel")
     LogText.Size = UDim2.new(1, 0, 0, 270)
@@ -558,16 +576,6 @@ local function CreateGUI()
     LogText.TextSize = 11
     LogText.TextXAlignment = Enum.TextXAlignment.Left
     LogText.Parent = cont3
-    
-    local KbBtn2 = CreateSmallButton(cont2, "["..FLY_KEY.Name.."] Fly", 200, 30, 190, 24)
-    KbBtn2.Position = UDim2.new(0, 0, 0, 30)
-    KbBtn2.TextXAlignment = Enum.TextXAlignment.Left
-    KbBtn2.Font = Enum.Font.GothamMedium
-    
-    local KbBtn3 = CreateSmallButton(cont2, "["..HUB_KEY.Name.."] Toggle Hub", 200, 60, 190, 24)
-    KbBtn3.Position = UDim2.new(0, 0, 0, 60)
-    KbBtn3.TextXAlignment = Enum.TextXAlignment.Left
-    KbBtn3.Font = Enum.Font.GothamMedium
 
     local c_combat1, cont_combat1 = CreateCard(Pages[2].Page, "Fast Attack", 1)
     local FastAttackBtn = CreateToggle(cont_combat1)
@@ -758,6 +766,7 @@ local function createPlayerButton(player, index)
     playerButtons[player] = btn
 end
 
+-- FIXED: Removed the typo playerHandlerPlayerButtons
 local function refreshPlayerList()
     for _, child in pairs(PlayerScrollFrame:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
     playerButtons = {}
@@ -767,7 +776,7 @@ local function refreshPlayerList()
     for i, player in pairs(sorted) do createPlayerButton(player, i) end
     if targetPlayer and playerButtons[targetPlayer] then
         playerButtons[targetPlayer].BackgroundColor3 = theme.card
-        playerHandlerPlayerButtons[targetPlayer].TextColor3 = theme.accentGreen
+        playerButtons[targetPlayer].TextColor3 = theme.accentGreen
     end
 end
 
@@ -794,7 +803,7 @@ local function checkPlayerForAlerts(p)
         end
         
         if isOwner then
-            Notify("👑 Owner Joined", "noobez Hub Owner: " .. p.Name .. " joined the game", "Owner")
+            Notify("👑 Owner Joined", "noobez Hub Owner: " .. p.DisplayName .. " joined the game", "Owner")
             return
         end
         
@@ -807,14 +816,14 @@ local function checkPlayerForAlerts(p)
         end
         
         if isStaff then
-            Notify("🛡️ Staff Joined", "noobez Hub Staff: " .. p.Name .. " joined the game", "Staff")
+            Notify("🛡️ Staff Joined", "noobez Hub Staff: " .. p.DisplayName .. " joined the game", "Staff")
             return
         end
         
         if DangerGroupId ~= 0 then
             local success, rank = pcall(function() return p:GetRankInGroup(DangerGroupId) end)
             if success and rank >= DangerMinRank then
-                Notify("⚠️ DANGER ALERT", p.Name .. " joined! (Rank: " .. rank .. ")", "Danger")
+                Notify("⚠️ DANGER ALERT", p.DisplayName .. " joined! (Rank: " .. rank .. ")", "Danger")
             end
         end
     end)
@@ -822,11 +831,11 @@ end
 
 -- LISTEN FOR NEW PLAYERS JOINING
 Players.PlayerAdded:Connect(function(p)
-    refreshPlayerList()
     checkPlayerForAlerts(p)
+    refreshPlayerList()
 end)
 
--- CHECK FOR PLAYERS ALREADY IN SERVER (Fixes notifications not working)
+-- CHECK FOR PLAYERS ALREADY IN SERVER
 for _, p in pairs(Players:GetPlayers()) do
     if p ~= Players.LocalPlayer then
         checkPlayerForAlerts(p)
@@ -999,7 +1008,7 @@ local function UpdateESP()
                 local dist, hp = math.floor((hr.Position - mhr.Position).Magnitude), math.floor(hm.Health)
                 local roleTag, isSpecialRole = "", false
                 if isOwnerUser(p.UserId) then roleTag = '<font color="#ffd700">[noobez Owner]</font>\n'; isSpecialRole = true
-                elseif isStaffUser(p.UserId) then roleTag = '<font color="#ffd700">[noobez Staff]</font>\n'; isSpecialRole = true end
+                elseif isStaffUser(p.UserId) then roleTag = '<font color="#00bbff">[noobez Staff]</font>\n'; isSpecialRole = true end
                 local espText = roleTag .. '<font color="#00ff88">'..p.Name..'</font>\n<font color="#00bbff">HP: '..hp..' | '..dist..'m</font>'
                 if not ESPObjects[p] then
                     local bbSize = UDim2.new(0, 120, 0, isSpecialRole and 55 or 40)
@@ -1064,9 +1073,9 @@ local function StartAutoV4()
         end
     end)
 end
-local function StopAutoV4() if AutoV4  then task.cancel(AutoV4Connection) AutoV4Connection = nil end end
+local function StopAutoV4() if AutoV4Connection then task.cancel(AutoV4Connection) AutoV4Connection = nil end end
 
--- ANTI LAVA / HAUNTED LOGIC (ZERO LAG VERSION)
+-- ANTI LAVA / HAUNTED LOGIC
 local dangerousParts = {"Lava", "Haunted"}
 
 local function disableTouchForPart(obj)
@@ -1079,163 +1088,352 @@ end
 local function StartAntiLava()
     if AntiLavaConnection then AntiLavaConnection:Disconnect() end
     
-    -- Scan existing parts ONCE
     for _, obj in pairs(workspace:GetDescendants()) do
         disableTouchForPart(obj)
     end
     
-    -- Listen for new parts loading in (0 lag)
     AntiLavaConnection = workspace.DescendantAdded:Connect(function(obj)
-        if AntiLavaEnabled then
-            disableTouchForPart(obj)
-        end
+        disableTouchForPart(obj)
     end)
 end
 
 local function StopAntiLava()
     if AntiLavaConnection then AntiLavaConnection:Disconnect() AntiLavaConnection = nil end
-    
-    -- Restore touch properties
-    for _, part in ipairs(antiLavaParts) do
+    for _, part in pairs(antiLavaParts) do
         if part and part.Parent then
             part.CanTouch = true
         end
     end
-    table.clear(antiLavaParts)
+    antiLavaParts = {}
 end
 
--- === EXPLICIT TOGGLE FUNCTIONS ===
-local function ToggleFastAttack() FastAttackEnabled = not FastAttackEnabled; ToggleButtonStyle(FastAttackBtn, FastAttackEnabled); if FastAttackEnabled then StartFastAttack() else StopFastAttack() end end
-local function ToggleFly() FlyEnabled = not FlyEnabled; ToggleButtonStyle(FlyBtn, FlyEnabled); if FlyEnabled then StartFly() else StopFly() end end
-local function ToggleTP()
-    if not targetPlayer then TPStatus.Text = "Status: Select a player"; return end
-    teleporting = not teleporting; ToggleButtonStyle(TPToggleBtn, teleporting)
-    TPStatus.Text = teleporting and "Target: "..targetPlayer.DisplayName or "Status: Idle"
+local function RemoveTouchInterest()
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            local touch = obj:FindFirstChild("TouchInterest")
+            if touch then touch:Destroy() end
+        end
+    end
 end
-local function ToggleSpectate()
-    if not targetPlayer then TPStatus.Text = "Status: Select a player"; return end
-    SpectateEnabled = not SpectateEnabled; ToggleButtonStyle(SpectateBtn, SpectateEnabled)
-    if SpectateEnabled then StartSpectate() else StopSpectate() end
-    TPStatus.Text = SpectateEnabled and "Viewing: "..targetPlayer.DisplayName or "Status: Idle"
+
+-- === TELEPORT LOOP ===
+local tpLoopConnection = nil
+
+local function StartTeleportLoop()
+    if tpLoopConnection then tpLoopConnection:Disconnect() end
+    tpLoopConnection = RunService.Heartbeat:Connect(function()
+        if not teleporting or not targetPlayer or not targetPlayer.Character then return end
+        local hrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            TpTo(hrp.CFrame * CFrame.new(0, 0, 3))
+        end
+    end)
 end
-local function ToggleESP() ESPEnabled = not ESPEnabled; ToggleButtonStyle(ESPBtn, ESPEnabled); if ESPEnabled then if ESPConnection then ESPConnection:Disconnect() end; ESPConnection = RunService.RenderStepped:Connect(UpdateESP) else if ESPConnection then ESPConnection:Disconnect() ESPConnection = nil end; ClearESP() end end
-local function ToggleBoxESP() BoxESPEnabled = not BoxESPEnabled; ToggleButtonStyle(BoxESPBtn, BoxESPEnabled); if BoxESPEnabled then if BoxESPConnection then BoxESPConnection:Disconnect() end; BoxESPConnection = RunService.RenderStepped:Connect(UpdateBoxESP) else if BoxESPConnection then BoxESPConnection:Disconnect() BoxESPConnection = nil end; ClearBoxESP() end end
-local function ToggleFullbright() FullbrightEnabled = not FullbrightEnabled; ToggleButtonStyle(FullbrightBtn, FullbrightEnabled); if FullbrightEnabled then EnableFullbright() else DisableFullbright() end end
-local function ToggleAntiAFK() AntiAFKEnabled = not AntiAFKEnabled; ToggleButtonStyle(AntiAFKBtn, AntiAFKEnabled); if AntiAFKEnabled then StartAntiAFK() else StopAntiAFK() end end
 
--- === BUTTON CONNECTIONS ===
-FastAttackBtn.MouseButton1Click:Connect(ToggleFastAttack)
-FlyBtn.MouseButton1Click:Connect(ToggleFly)
-TPToggleBtn.MouseButton1Click:Connect(ToggleTP)
-SpectateBtn.MouseButton1Click:Connect(ToggleSpectate)
-ESPBtn.MouseButton1Click:Connect(ToggleESP)
-BoxESPBtn.MouseButton1Click:Connect(ToggleBoxESP)
-FullbrightBtn.MouseButton1Click:Connect(ToggleFullbright)
-AntiAFKBtn.MouseButton1Click:Connect(ToggleAntiAFK)
-InfiniteJumpBtn.MouseButton1Click:Connect(function() InfiniteJumpEnabled = not InfiniteJumpEnabled; ToggleButtonStyle(InfiniteJumpBtn, InfiniteJumpEnabled); if InfiniteJumpEnabled then StartInfiniteJump() else StopInfiniteJump() end end)
-NoclipBtn.MouseButton1Click:Connect(function() NoclipEnabled = not NoclipEnabled; ToggleButtonStyle(NoclipBtn, NoclipEnabled); if NoclipEnabled then StartNoclip() else StopNoclip() end end)
-SpiderClimbBtn.MouseButton1Click:Connect(function() SpiderClimbEnabled = not SpiderClimbEnabled; ToggleButtonStyle(SpiderClimbBtn, SpiderClimbEnabled); if SpiderClimbEnabled then StartSpiderClimb() else StopSpiderClimb() end end)
+local function StopTeleportLoop()
+    if tpLoopConnection then tpLoopConnection:Disconnect() tpLoopConnection = nil end
+end
 
-AntiStunBtn.MouseButton1Click:Connect(function()
-    AntiStunEnabled = not AntiStunEnabled
-    ToggleButtonStyle(AntiStunBtn, AntiStunEnabled)
-    if AntiStunEnabled then EnableAntiStun() end
-end)
+-- === BUTTON HANDLERS ===
 
-AutoV4Btn.MouseButton1Click:Connect(function()
-    AutoV4Enabled = not AutoV4Enabled
-    ToggleButtonStyle(AutoV4Btn, AutoV4Enabled)
-    if AutoV4Enabled then StartAutoV4() else StopAutoV4() end
-end)
-
-TpBtn1.MouseButton1Click:Connect(function() TpTo(CFrame.new(2285, 38, 899)) end)
-TpBtn2.MouseButton1Click:Connect(function() TpTo(CFrame.new(-287, 306, 598)) end)
-TpBtn3.MouseButton1Click:Connect(function() TpTo(CFrame.new(-6500, 129, -123)) end)
-TpBtn4.MouseButton1Click:Connect(function() TpTo(CFrame.new(918.576, 125.098, 32851.527)) end)
-
-TouchBtn.MouseButton1Click:Connect(function()
-    for _, d in pairs(game:GetDescendants()) do
-        if d:IsA("TouchTransmitter") then d:Destroy() end
+-- Fast Attack
+FastAttackBtn.MouseButton1Click:Connect(function()
+    FastAttackEnabled = not FastAttackEnabled
+    ToggleButtonStyle(FastAttackBtn, FastAttackEnabled)
+    if FastAttackEnabled then
+        StartFastAttack()
+        Notify("Fast Attack", "Enabled", "Info")
+    else
+        StopFastAttack()
+        Notify("Fast Attack", "Disabled", "Info")
     end
 end)
 
+-- Anti Stun
+AntiStunBtn.MouseButton1Click:Connect(function()
+    AntiStunEnabled = not AntiStunEnabled
+    ToggleButtonStyle(AntiStunBtn, AntiStunEnabled)
+    if AntiStunEnabled then
+        EnableAntiStun()
+        Notify("Anti Stun", "Enabled", "Info")
+    else
+        Notify("Anti Stun", "Disabled (rejoin to reset)", "Info")
+    end
+end)
+
+-- Auto V4
+AutoV4Btn.MouseButton1Click:Connect(function()
+    AutoV4Enabled = not AutoV4Enabled
+    ToggleButtonStyle(AutoV4Btn, AutoV4Enabled)
+    if AutoV4Enabled then
+        StartAutoV4()
+        Notify("Auto V4", "Enabled", "Info")
+    else
+        StopAutoV4()
+        Notify("Auto V4", "Disabled", "Info")
+    end
+end)
+
+-- Teleport Buttons
+TpBtn1.MouseButton1Click:Connect(function()
+    TpTo(CFrame.new(-1065.3, 390.7, 5951.3))
+    Notify("Teleport", "Mansion Flamingo (Inside)", "Info")
+end)
+TpBtn2.MouseButton1Click:Connect(function()
+    TpTo(CFrame.new(-1065.3, 385.7, 5900.3))
+    Notify("Teleport", "Mansion Flamingo (Outside)", "Info")
+end)
+TpBtn3.MouseButton1Click:Connect(function()
+    TpTo(CFrame.new(1117.6, 17.4, 3115.6))
+    Notify("Teleport", "Haunted Ship (Outside)", "Info")
+end)
+TpBtn4.MouseButton1Click:Connect(function()
+    TpTo(CFrame.new(1117.6, 25.4, 3115.6))
+    Notify("Teleport", "Haunted Ship (Inside)", "Info")
+end)
+
+-- Fly
+FlyBtn.MouseButton1Click:Connect(function()
+    FlyEnabled = not FlyEnabled
+    ToggleButtonStyle(FlyBtn, FlyEnabled)
+    if FlyEnabled then
+        StartFly()
+        Notify("Fly", "Enabled", "Info")
+    else
+        StopFly()
+        Notify("Fly", "Disabled", "Info")
+    end
+end)
+
+-- Loop Teleport
+TPToggleBtn.MouseButton1Click:Connect(function()
+    if not targetPlayer then
+        Notify("Loop Teleport", "Select a player first!", "Danger")
+        return
+    end
+    teleporting = not teleporting
+    ToggleButtonStyle(TPToggleBtn, teleporting)
+    if teleporting then
+        StartTeleportLoop()
+        TPStatus.Text = "Target: " .. targetPlayer.DisplayName
+        Notify("Loop Teleport", "Teleporting to " .. targetPlayer.DisplayName, "Info")
+    else
+        StopTeleportLoop()
+        TPStatus.Text = "Status: Idle"
+        Notify("Loop Teleport", "Stopped", "Info")
+    end
+end)
+
+-- Spectate
+SpectateBtn.MouseButton1Click:Connect(function()
+    if not targetPlayer then
+        Notify("Spectate", "Select a player first!", "Danger")
+        return
+    end
+    SpectateEnabled = not SpectateEnabled
+    ToggleButtonStyle(SpectateBtn, SpectateEnabled)
+    if SpectateEnabled then
+        StartSpectate()
+        TPStatus.Text = "Viewing: " .. targetPlayer.DisplayName
+        Notify("Spectate", "Viewing " .. targetPlayer.DisplayName, "Info")
+    else
+        StopSpectate()
+        TPStatus.Text = "Status: Idle"
+        Notify("Spectate", "Stopped", "Info")
+    end
+end)
+
+-- Infinite Jump
+InfiniteJumpBtn.MouseButton1Click:Connect(function()
+    InfiniteJumpEnabled = not InfiniteJumpEnabled
+    ToggleButtonStyle(InfiniteJumpBtn, InfiniteJumpEnabled)
+    if InfiniteJumpEnabled then
+        StartInfiniteJump()
+        Notify("Infinite Jump", "Enabled", "Info")
+    else
+        StopInfiniteJump()
+        Notify("Infinite Jump", "Disabled", "Info")
+    end
+end)
+
+-- Noclip
+NoclipBtn.MouseButton1Click:Connect(function()
+    NoclipEnabled = not NoclipEnabled
+    ToggleButtonStyle(NoclipBtn, NoclipEnabled)
+    if NoclipEnabled then
+        StartNoclip()
+        Notify("Noclip", "Enabled", "Info")
+    else
+        StopNoclip()
+        Notify("Noclip", "Disabled", "Info")
+    end
+end)
+
+-- Spider Climb
+SpiderClimbBtn.MouseButton1Click:Connect(function()
+    SpiderClimbEnabled = not SpiderClimbEnabled
+    ToggleButtonStyle(SpiderClimbBtn, SpiderClimbEnabled)
+    if SpiderClimbEnabled then
+        StartSpiderClimb()
+        Notify("Spider Climb", "Enabled", "Info")
+    else
+        StopSpiderClimb()
+        Notify("Spider Climb", "Disabled", "Info")
+    end
+end)
+
+-- ESP
+ESPBtn.MouseButton1Click:Connect(function()
+    ESPEnabled = not ESPEnabled
+    ToggleButtonStyle(ESPBtn, ESPEnabled)
+    if ESPEnabled then
+        if ESPConnection then ESPConnection:Disconnect() end
+        ESPConnection = RunService.Heartbeat:Connect(UpdateESP)
+        Notify("ESP", "Enabled", "Info")
+    else
+        if ESPConnection then ESPConnection:Disconnect() ESPConnection = nil end
+        ClearESP()
+        Notify("ESP", "Disabled", "Info")
+    end
+end)
+
+-- Box ESP
+BoxESPBtn.MouseButton1Click:Connect(function()
+    BoxESPEnabled = not BoxESPEnabled
+    ToggleButtonStyle(BoxESPBtn, BoxESPEnabled)
+    if BoxESPEnabled then
+        if BoxESPConnection then BoxESPConnection:Disconnect() end
+        BoxESPConnection = RunService.Heartbeat:Connect(UpdateBoxESP)
+        Notify("Box ESP", "Enabled", "Info")
+    else
+        if BoxESPConnection then BoxESPConnection:Disconnect() BoxESPConnection = nil end
+        ClearBoxESP()
+        Notify("Box ESP", "Disabled", "Info")
+    end
+end)
+
+-- Fullbright
+FullbrightBtn.MouseButton1Click:Connect(function()
+    FullbrightEnabled = not FullbrightEnabled
+    ToggleButtonStyle(FullbrightBtn, FullbrightEnabled)
+    if FullbrightEnabled then
+        EnableFullbright()
+        Notify("Fullbright", "Enabled", "Info")
+    else
+        DisableFullbright()
+        Notify("Fullbright", "Disabled", "Info")
+    end
+end)
+
+-- Reset FOV
+ResetFOVBtn.MouseButton1Click:Connect(function()
+    FOVValue = 70
+    if workspace.CurrentCamera then workspace.CurrentCamera.FieldOfView = 70 end
+    if FOVLabel then FOVLabel.Text = "FOV: 70" end
+    Notify("FOV", "Reset to 70", "Info")
+end)
+
+-- Anti AFK
+AntiAFKBtn.MouseButton1Click:Connect(function()
+    AntiAFKEnabled = not AntiAFKEnabled
+    ToggleButtonStyle(AntiAFKBtn, AntiAFKEnabled)
+    if AntiAFKEnabled then
+        StartAntiAFK()
+        Notify("Anti AFK", "Enabled", "Info")
+    else
+        StopAntiAFK()
+        Notify("Anti AFK", "Disabled", "Info")
+    end
+end)
+
+-- FPS Boost
+FPSBoostBtn.MouseButton1Click:Connect(function()
+    BoostFPS()
+    Notify("FPS Booster", "Applied!", "Info")
+end)
+
+-- Rejoin
+RejoinBtn.MouseButton1Click:Connect(function()
+    RejoinServer()
+end)
+
+-- Server Hop
+ServerHopBtn.MouseButton1Click:Connect(function()
+    ServerHop()
+    Notify("Server Hop", "Finding new server...", "Info")
+end)
+
+-- Remove TouchInterest
+TouchBtn.MouseButton1Click:Connect(function()
+    RemoveTouchInterest()
+    Notify("Touch Interest", "Removed all TouchInterest!", "Info")
+end)
+
+-- Anti Lava
 AntiLavaBtn.MouseButton1Click:Connect(function()
     AntiLavaEnabled = not AntiLavaEnabled
     ToggleButtonStyle(AntiLavaBtn, AntiLavaEnabled)
     if AntiLavaEnabled then
         StartAntiLava()
+        Notify("Anti Lava", "Enabled", "Info")
     else
         StopAntiLava()
+        Notify("Anti Lava", "Disabled", "Info")
     end
 end)
 
-ResetFOVBtn.MouseButton1Click:Connect(function() FOVValue = DefaultFOV; if workspace.CurrentCamera then workspace.CurrentCamera.FieldOfView = DefaultFOV end; FOVLabel.Text = "FOV: "..DefaultFOV end)
-FPSBoostBtn.MouseButton1Click:Connect(BoostFPS)
-RejoinBtn.MouseButton1Click:Connect(RejoinServer)
-ServerHopBtn.MouseButton1Click:Connect(ServerHop)
-
--- === GUI FADE TOGGLE ANIMATION ===
-local function ToggleHub()
-    if isTogglingGui then return end
-    isTogglingGui = true
-    local stroke = MainFrameRef:FindFirstChildOfClass("UIStroke")
-    if MainFrameRef.Visible then
-        local fadeOut = TweenService:Create(MainFrameRef, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
-        if stroke then TweenService:Create(stroke, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Transparency = 1}):Play() end
-        fadeOut:Play()
-        fadeOut.Completed:Connect(function()
-            MainFrameRef.Visible = false
-            MainFrameRef.BackgroundTransparency = 0.05
-            if stroke then stroke.Transparency = 0.85 end
-            isTogglingGui = false
-        end)
-    else
-        MainFrameRef.Visible = true
-        MainFrameRef.BackgroundTransparency = 1
-        if stroke then stroke.Transparency = 1 end
-        local fadeIn = TweenService:Create(MainFrameRef, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.05})
-        if stroke then TweenService:Create(stroke, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0.85}):Play() end
-        fadeIn:Play()
-        fadeIn.Completed:Connect(function() isTogglingGui = false end)
-    end
-end
-
--- === KEYBINDS ===
+-- === KEYBIND HANDLERS ===
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
+    
+    -- Keybind Rebinding
     if isRebinding then
         if input.UserInputType == Enum.UserInputType.Keyboard then
+            local keyName = input.KeyCode.Name
             if isRebinding == "TOGGLE_KEY" then
                 TOGGLE_KEY = input.KeyCode
-                KbBtn1.Text = "["..TOGGLE_KEY.Name.."] Fast Attack"
+                KbBtn1.Text = "[" .. keyName .. "] Fast Attack"
                 KbBtn1.TextColor3 = theme.textMuted
             elseif isRebinding == "FLY_KEY" then
                 FLY_KEY = input.KeyCode
-                KbBtn2.Text = "["..FLY_KEY.Name.."] Fly"
+                KbBtn2.Text = "[" .. keyName .. "] Fly"
                 KbBtn2.TextColor3 = theme.textMuted
             elseif isRebinding == "HUB_KEY" then
                 HUB_KEY = input.KeyCode
-                KbBtn3.Text = "["..HUB_KEY.Name.."] Toggle Hub"
+                KbBtn3.Text = "[" .. keyName .. "] Toggle Hub"
                 KbBtn3.TextColor3 = theme.textMuted
             end
             isRebinding = nil
         end
         return
     end
-
-    if input.KeyCode == TOGGLE_KEY then ToggleFastAttack() end
-    if input.KeyCode == FLY_KEY then ToggleFly() end
-    if input.KeyCode == HUB_KEY then ToggleHub() end
+    
+    if input.KeyCode == TOGGLE_KEY then
+        FastAttackEnabled = not FastAttackEnabled
+        ToggleButtonStyle(FastAttackBtn, FastAttackEnabled)
+        if FastAttackEnabled then StartFastAttack() else StopFastAttack() end
+    elseif input.KeyCode == FLY_KEY then
+        FlyEnabled = not FlyEnabled
+        ToggleButtonStyle(FlyBtn, FlyEnabled)
+        if FlyEnabled then StartFly() else StopFly() end
+    elseif input.KeyCode == HUB_KEY then
+        if isTogglingGui then return end
+        isTogglingGui = true
+        if MainFrameRef.Visible then
+            TweenService:Create(MainFrameRef, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)}):Play()
+            task.wait(0.2)
+            MainFrameRef.Visible = false
+        else
+            MainFrameRef.Visible = true
+            MainFrameRef.Size = UDim2.new(0, 0, 0, 0)
+            TweenService:Create(MainFrameRef, TweenInfo.new(0.25, Enum.EasingStyle.Back), {Size = UDim2.new(0, 550, 0, 450)}):Play()
+        end
+        task.wait(0.3)
+        isTogglingGui = false
+    end
 end)
 
--- === LOOP TELEPORT ===
-RunService.Heartbeat:Connect(function()
-    if teleporting and targetPlayer and targetPlayer.Character then
-        local myChar = Players.LocalPlayer.Character
-        local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
-        local tHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if myHRP and tHRP then
-            myHRP.CFrame = tHRP.CFrame
-        end
-    end
+-- Initial notification
+task.delay(1, function()
+    Notify("noobez Hub", "Loaded successfully! Press " .. HUB_KEY.Name .. " to toggle.", "Info")
 end)
