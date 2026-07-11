@@ -1030,19 +1030,20 @@ local function UpdateESP()
                         ESPObjects[p] = nil
                     end
                     
-                    local screenPos, onScreen = cam:WorldToViewportPoint(hr.Position + Vector3.new(0, 3, 0))
+                    -- Get exact screen position of their body
+                    local screenPos, onScreen = cam:WorldToViewportPoint(hr.Position)
                     
                     if not ESPObjects[p] then
                         local l = Instance.new("TextLabel")
-                        l.Size = UDim2.new(0, 150, 0, 40) -- Fixed size so it doesn't get huge
-                        l.AnchorPoint = Vector2.new(0.5, 0)
+                        l.Size = UDim2.new(0, 150, 0, 40) 
+                        l.AnchorPoint = Vector2.new(0.5, 1) -- Bottom center anchor
                         l.BackgroundTransparency = 1
                         l.TextColor3 = theme.textMain
                         l.TextStrokeTransparency = 0.5
                         l.TextStrokeColor3 = Color3.new(0, 0, 0)
                         l.Font = Enum.Font.GothamBold
-                        l.TextSize = 13 -- Fixed small text size
-                        l.TextScaled = false -- Prevents it from blowing up
+                        l.TextSize = 13 
+                        l.TextScaled = false 
                         l.RichText = true
                         l.Text = espText
                         l.Parent = HubGui
@@ -1052,8 +1053,9 @@ local function UpdateESP()
                     end
                     
                     local label = ESPObjects[p]
-                    label.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
-                    label.Visible = onScreen -- Hides cleanly if they go behind you
+                    -- Subtract 20 pixels from Y to force it ABOVE the player on screen
+                    label.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y - 20)
+                    label.Visible = onScreen 
                 end
             else
                 if ESPObjects[p] then ESPObjects[p]:Destroy() ESPObjects[p] = nil end
