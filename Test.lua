@@ -77,6 +77,11 @@ local AntiHauntedConnection = nil
 local dangerousParts = {"Lava", "Haunted"}
 local cachedDangerousParts = {}
 
+-- No Fog
+local NoFogEnabled = false
+local OriginalFog = {}
+local FantasySkyRef = nil
+
 -- Keybind Rebinding State
 local isRebinding = nil
 
@@ -516,7 +521,7 @@ local function CreateGUI()
     local WelText = Instance.new("TextLabel")
     WelText.Size = UDim2.new(1, 0, 0, 220)
     WelText.BackgroundTransparency = 1
-    WelText.Text = "\nVersion 2.0.0\n\nAdded:\n- Spectate\n- Infinite Jump\n- Noclip\n- Spider Climb\n- Box ESP\n- Fullbright\n- FOV Changer\n- Anti AFK\n- FPS Booster\n- Server Actions (Rejoin + Server Hop)\n- Staff Alert\n- Anti Haunted\n\nImprovements:\n- General Stability improvements\n- Minor bug fixes"
+    WelText.Text = "\nVersion 2.0.0\n\nAdded:\n- Spectate\n- Infinite Jump\n- Noclip\n- Spider Climb\n- Box ESP\n- Fullbright\n- FOV Changer\n- Anti AFK\n- FPS Booster\n- Server Actions (Rejoin + Server Hop)\n- Staff Alert\n- Anti Haunted\n- No Fog\n\nImprovements:\n- General Stability improvements\n- Minor bug fixes"
     WelText.TextColor3 = theme.textMuted
     WelText.Font = Enum.Font.Gotham
     WelText.TextSize = 11
@@ -638,6 +643,19 @@ local function CreateGUI()
     AntiHauntedText.TextXAlignment = Enum.TextXAlignment.Left
     AntiHauntedText.Parent = cont18
 
+    local c19, cont19 = CreateCard(Pages[5].Page, "No Fog", 5)
+    local NoFogBtn = CreateToggle(cont19)
+    local NoFogText = Instance.new("TextLabel")
+    NoFogText.Size = UDim2.new(1, -110, 0, 28)
+    NoFogText.Position = UDim2.new(0, 0, 0, 0)
+    NoFogText.BackgroundTransparency = 1
+    NoFogText.Text = "Removes Fog & Lighting.FantasySky"
+    NoFogText.TextColor3 = theme.textMuted
+    NoFogText.Font = Enum.Font.Gotham
+    NoFogText.TextSize = 10
+    NoFogText.TextXAlignment = Enum.TextXAlignment.Left
+    NoFogText.Parent = cont19
+
     -- Dragging Logic
     local dragging, dragInput, dragStart, startPos
     TitleBar.InputBegan:Connect(function(input)
@@ -667,7 +685,8 @@ local function CreateGUI()
         FPSBoostBtn = FPSBoostBtn, RejoinBtn = RejoinBtn, ServerHopBtn = ServerHopBtn,
         SpectateBtn = SpectateBtn,
         KbBtn1 = KbBtn1, KbBtn2 = KbBtn2, KbBtn3 = KbBtn3,
-        AntiHauntedBtn = AntiHauntedBtn
+        AntiHauntedBtn = AntiHauntedBtn,
+        NoFogBtn = NoFogBtn
     }
 end
 
@@ -681,6 +700,7 @@ local FPSBoostBtn, RejoinBtn, ServerHopBtn = UI.FPSBoostBtn, UI.RejoinBtn, UI.Se
 local SpectateBtn = UI.SpectateBtn
 local KbBtn1, KbBtn2, KbBtn3 = UI.KbBtn1, UI.KbBtn2, UI.KbBtn3
 local AntiHauntedBtn = UI.AntiHauntedBtn
+local NoFogBtn = UI.NoFogBtn
 
 local playerButtons = {}
 
@@ -1033,6 +1053,33 @@ local function StopAntiHaunted()
     cachedDangerousParts = {}
 end
 
+local function StartNoFog()
+    OriginalFog = {
+        FogEnd = Lighting.FogEnd,
+        FogStart = Lighting.FogStart
+    }
+    Lighting.FogEnd = 100000
+    Lighting.FogStart = 0
+    
+    local fs = Lighting:FindFirstChild("FantasySky")
+    if fs then
+        FantasySkyRef = fs
+        fs.Enabled = false
+    end
+end
+
+local function StopNoFog()
+    for prop, value in pairs(OriginalFog) do
+        pcall(function() Lighting[prop] = value end)
+    end
+    OriginalFog = {}
+    
+    if FantasySkyRef and FantasySkyRef.Parent then
+        FantasySkyRef.Enabled = true
+    end
+    FantasySkyRef = nil
+end
+
 local function BoostFPS() Lighting.GlobalShadows = false; Lighting.FogEnd = 100000; Lighting.Brightness = 2; Lighting.ClockTime = 14; for _, obj in pairs(Lighting:GetChildren()) do if obj:IsA("PostEffect") or obj:IsA("Atmosphere") then obj.Enabled = false end end; pcall(function() settings().QualityLevel = Enum.QualityLevel.Level01 end) end
 local function RejoinServer() pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Players.LocalPlayer) end) end
 local function ServerHop() pcall(function() local servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")); for _, server in pairs(servers.data) do if server.playing < server.maxPlayers and server.id ~= game.JobId then TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, Players.LocalPlayer); return end end end) end
@@ -1056,6 +1103,7 @@ local function ToggleBoxESP() BoxESPEnabled = not BoxESPEnabled; ToggleButtonSty
 local function ToggleFullbright() FullbrightEnabled = not FullbrightEnabled; ToggleButtonStyle(FullbrightBtn, FullbrightEnabled); if FullbrightEnabled then EnableFullbright() else DisableFullbright() end end
 local function ToggleAntiAFK() AntiAFKEnabled = not AntiAFKEnabled; ToggleButtonStyle(AntiAFKBtn, AntiAFKEnabled); if AntiAFKEnabled then StartAntiAFK() else StopAntiAFK() end end
 local function ToggleAntiHaunted() AntiHauntedEnabled = not AntiHauntedEnabled; ToggleButtonStyle(AntiHauntedBtn, AntiHauntedEnabled); if AntiHauntedEnabled then StartAntiHaunted() else StopAntiHaunted() end end
+local function ToggleNoFog() NoFogEnabled = not NoFogEnabled; ToggleButtonStyle(NoFogBtn, NoFogEnabled); if NoFogEnabled then StartNoFog() else StopNoFog() end end
 
 -- === BUTTON CONNECTIONS ===
 FastAttackBtn.MouseButton1Click:Connect(ToggleFastAttack)
@@ -1067,6 +1115,7 @@ BoxESPBtn.MouseButton1Click:Connect(ToggleBoxESP)
 FullbrightBtn.MouseButton1Click:Connect(ToggleFullbright)
 AntiAFKBtn.MouseButton1Click:Connect(ToggleAntiAFK)
 AntiHauntedBtn.MouseButton1Click:Connect(ToggleAntiHaunted)
+NoFogBtn.MouseButton1Click:Connect(ToggleNoFog)
 InfiniteJumpBtn.MouseButton1Click:Connect(function() InfiniteJumpEnabled = not InfiniteJumpEnabled; ToggleButtonStyle(InfiniteJumpBtn, InfiniteJumpEnabled); if InfiniteJumpEnabled then StartInfiniteJump() else StopInfiniteJump() end end)
 NoclipBtn.MouseButton1Click:Connect(function() NoclipEnabled = not NoclipEnabled; ToggleButtonStyle(NoclipBtn, NoclipEnabled); if NoclipEnabled then StartNoclip() else StopNoclip() end end)
 SpiderClimbBtn.MouseButton1Click:Connect(function() SpiderClimbEnabled = not SpiderClimbEnabled; ToggleButtonStyle(SpiderClimbBtn, SpiderClimbEnabled); if SpiderClimbEnabled then StartSpiderClimb() else StopSpiderClimb() end end)
