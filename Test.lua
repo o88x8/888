@@ -26,7 +26,7 @@ local FastAttackConnection = nil
 
 local teleporting = false
 local targetPlayer = nil
-local teleportCooldown = 0.01 -- Made TP way faster (was 0.1)
+local teleportCooldown = 0.01
 
 -- Spectate
 local SpectateEnabled = false
@@ -632,7 +632,6 @@ local function CreateGUI()
     local FullbrightBtn = CreateToggle(cont13)
 
     local c19, cont19 = CreateCard(Pages[6].Page, "No Fog", 2)
-    local NoFogBtn = CreateToggle(cont19)
     local NoFogText = Instance.new("TextLabel")
     NoFogText.Size = UDim2.new(1, -110, 0, 28)
     NoFogText.Position = UDim2.new(0, 0, 0, 0)
@@ -643,6 +642,10 @@ local function CreateGUI()
     NoFogText.TextSize = 10
     NoFogText.TextXAlignment = Enum.TextXAlignment.Left
     NoFogText.Parent = cont19
+    
+    -- Changed to a standard button instead of a toggle switch
+    local NoFogBtn = CreateSmallButton(cont19, "REMOVE FOG", 100, 0, 100, 28)
+    NoFogBtn.Position = UDim2.new(1, -100, 0, 0)
 
     -- Dragging Logic
     local dragging, dragInput, dragStart, startPos
@@ -1070,7 +1073,7 @@ local function CreateBoxForPlayer(player)
     end; BoxESPObjects[player] = billboard
 end
 local function UpdateBoxESP()
-    for _, player in pairs(Players:GetPlayers()) do if player ~= Players.LocalPlayer then local char = player.Character; local humanoid = char and char:FindFirstChild("Humanoid") if char and humanoid and humanoid.Health > 0 then CreateBoxForPlayer(player) else if BoxESPObjects[player] then BoxESPObjects[player]:Destroy(); BoxESPObjects[player] = nil end end end end
+    for _, player in pairs(Players:GetPlayers()) do if player ~= Players.LocalPlayer then local char = player.Character; local humanoid = char and char:FindFirstChild("Humanoid") if char and humanoid and humanoid.Health > 0 then CreateBoxForPlayer(player) else if BoxESPObjects[player] then BoxESPObjects[player]:Destroy(); BoxESPObjects[player] = nil end end end end end
 end
 
 local function EnableFullbright() OriginalLighting = {Brightness = Lighting.Brightness, ClockTime = Lighting.ClockTime, FogEnd = Lighting.FogEnd, FogStart = Lighting.FogStart, Ambient = Lighting.Ambient, OutdoorAmbient = Lighting.OutdoorAmbient, GlobalShadows = Lighting.GlobalShadows}; Lighting.Brightness = 2; Lighting.ClockTime = 14; Lighting.FogEnd = 100000; Lighting.FogStart = 0; Lighting.Ambient = Color3.fromRGB(178, 178, 178); Lighting.OutdoorAmbient = Color3.fromRGB(178, 178, 178); Lighting.GlobalShadows = false end
@@ -1128,18 +1131,6 @@ local function StartNoFog()
     end)
 end
 
-local function StopNoFog()
-    for prop, value in pairs(OriginalFog) do
-        pcall(function() Lighting[prop] = value end)
-    end
-    OriginalFog = {}
-    
-    if FantasySkyConnection then
-        FantasySkyConnection:Disconnect()
-        FantasySkyConnection = nil
-    end
-end
-
 local function RejoinServer() pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Players.LocalPlayer) end) end
 local function ServerHop() pcall(function() local servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")); for _, server in pairs(servers.data) do if server.playing < server.maxPlayers and server.id ~= game.JobId then TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, Players.LocalPlayer); return end end end) end
 
@@ -1162,7 +1153,6 @@ local function ToggleBoxESP() BoxESPEnabled = not BoxESPEnabled; ToggleButtonSty
 local function ToggleFullbright() FullbrightEnabled = not FullbrightEnabled; ToggleButtonStyle(FullbrightBtn, FullbrightEnabled); if FullbrightEnabled then EnableFullbright() else DisableFullbright() end end
 local function ToggleAntiAFK() AntiAFKEnabled = not AntiAFKEnabled; ToggleButtonStyle(AntiAFKBtn, AntiAFKEnabled); if AntiAFKEnabled then StartAntiAFK() else StopAntiAFK() end end
 local function ToggleAntiHaunted() AntiHauntedEnabled = not AntiHauntedEnabled; ToggleButtonStyle(AntiHauntedBtn, AntiHauntedEnabled); if AntiHauntedEnabled then StartAntiHaunted() else StopAntiHaunted() end end
-local function ToggleNoFog() NoFogEnabled = not NoFogEnabled; ToggleButtonStyle(NoFogBtn, NoFogEnabled); if NoFogEnabled then StartNoFog() else StopNoFog() end end
 
 -- === BUTTON CONNECTIONS ===
 FastAttackBtn.MouseButton1Click:Connect(ToggleFastAttack)
@@ -1174,7 +1164,14 @@ BoxESPBtn.MouseButton1Click:Connect(ToggleBoxESP)
 FullbrightBtn.MouseButton1Click:Connect(ToggleFullbright)
 AntiAFKBtn.MouseButton1Click:Connect(ToggleAntiAFK)
 AntiHauntedBtn.MouseButton1Click:Connect(ToggleAntiHaunted)
-NoFogBtn.MouseButton1Click:Connect(ToggleNoFog)
+
+-- One-click button to remove fog
+NoFogBtn.MouseButton1Click:Connect(function()
+    StartNoFog()
+    NoFogBtn.Text = "REMOVED"
+    NoFogBtn.TextColor3 = theme.accentGreen
+end)
+
 InfiniteJumpBtn.MouseButton1Click:Connect(function() InfiniteJumpEnabled = not InfiniteJumpEnabled; ToggleButtonStyle(InfiniteJumpBtn, InfiniteJumpEnabled); if InfiniteJumpEnabled then StartInfiniteJump() else StopInfiniteJump() end end)
 NoclipBtn.MouseButton1Click:Connect(function() NoclipEnabled = not NoclipEnabled; ToggleButtonStyle(NoclipBtn, NoclipEnabled); if NoclipEnabled then StartNoclip() else StopNoclip() end end)
 SpiderClimbBtn.MouseButton1Click:Connect(function() SpiderClimbEnabled = not SpiderClimbEnabled; ToggleButtonStyle(SpiderClimbBtn, SpiderClimbEnabled); if SpiderClimbEnabled then StartSpiderClimb() else StopSpiderClimb() end end)
