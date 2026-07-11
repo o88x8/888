@@ -80,7 +80,7 @@ local cachedDangerousParts = {}
 -- No Fog
 local NoFogEnabled = false
 local OriginalFog = {}
-local FantasySkyRef = nil
+local FantasySkyConnection = nil
 
 -- Keybind Rebinding State
 local isRebinding = nil
@@ -649,7 +649,7 @@ local function CreateGUI()
     NoFogText.Size = UDim2.new(1, -110, 0, 28)
     NoFogText.Position = UDim2.new(0, 0, 0, 0)
     NoFogText.BackgroundTransparency = 1
-    NoFogText.Text = "Removes Fog & Lighting.FantasySky"
+    NoFogText.Text = "Removes Fog & deletes FantasySky"
     NoFogText.TextColor3 = theme.textMuted
     NoFogText.Font = Enum.Font.Gotham
     NoFogText.TextSize = 10
@@ -1061,23 +1061,32 @@ local function StartNoFog()
     Lighting.FogEnd = 100000
     Lighting.FogStart = 0
     
+    -- Instantly delete FantasySky if it exists
     local fs = Lighting:FindFirstChild("FantasySky")
     if fs then
-        FantasySkyRef = fs
-        fs.Enabled = false
+        fs:Destroy()
     end
+    
+    -- Listen to delete it if the server tries to add it back
+    FantasySkyConnection = Lighting.ChildAdded:Connect(function(child)
+        if child.Name == "FantasySky" then
+            child:Destroy()
+        end
+    end)
 end
 
 local function StopNoFog()
+    -- Restore fog settings
     for prop, value in pairs(OriginalFog) do
         pcall(function() Lighting[prop] = value end)
     end
     OriginalFog = {}
     
-    if FantasySkyRef and FantasySkyRef.Parent then
-        FantasySkyRef.Enabled = true
+    -- Stop blocking FantasySky from coming back
+    if FantasySkyConnection then
+        FantasySkyConnection:Disconnect()
+        FantasySkyConnection = nil
     end
-    FantasySkyRef = nil
 end
 
 local function BoostFPS() Lighting.GlobalShadows = false; Lighting.FogEnd = 100000; Lighting.Brightness = 2; Lighting.ClockTime = 14; for _, obj in pairs(Lighting:GetChildren()) do if obj:IsA("PostEffect") or obj:IsA("Atmosphere") then obj.Enabled = false end end; pcall(function() settings().QualityLevel = Enum.QualityLevel.Level01 end) end
