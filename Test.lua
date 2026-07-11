@@ -75,6 +75,7 @@ local AntiAFKConnection = nil
 local AntiHauntedEnabled = false
 local AntiHauntedConnection = nil
 local dangerousParts = {"Lava", "Haunted"}
+local cachedDangerousParts = {}
 
 -- Keybind Rebinding State
 local isRebinding = nil
@@ -1003,41 +1004,33 @@ local function StopAntiAFK() if AntiAFKConnection then AntiAFKConnection:Disconn
 local function StartAntiHaunted()
     if AntiHauntedConnection then AntiHauntedConnection:Disconnect() end
     
-    local function setupCharacter(character)
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if not humanoid then return end
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if table.find(dangerousParts, obj.Name) and obj:IsA("BasePart") then
-                obj.Touched:Connect(function(hit)
-                    if AntiHauntedEnabled and hit.Parent == character then
-                        humanoid.Health = humanoid.MaxHealth
-                    end
-                end)
-            end
+    -- Scan once, not every frame
+    cachedDangerousParts = {}
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if table.find(dangerousParts, obj.Name) and obj:IsA("BasePart") then
+            table.insert(cachedDangerousParts, obj)
+            pcall(function() obj.CanTouch = false end)
         end
     end
     
-    if Players.LocalPlayer.Character then
-        setupCharacter(Players.LocalPlayer.Character)
-    end
-    
-    AntiHauntedConnection = RunService.Stepped:Connect(function()
+    -- Only listen for new parts being added (zero per-frame cost)
+    AntiHauntedConnection = workspace.DescendantAdded:Connect(function(obj)
         if not AntiHauntedEnabled then return end
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if table.find(dangerousParts, obj.Name) and obj:IsA("BasePart") then
-                obj.CanTouch = false
-            end
+        if table.find(dangerousParts, obj.Name) and obj:IsA("BasePart") then
+            table.insert(cachedDangerousParts, obj)
+            pcall(function() obj.CanTouch = false end)
         end
     end)
 end
 
 local function StopAntiHaunted()
     if AntiHauntedConnection then AntiHauntedConnection:Disconnect() AntiHauntedConnection = nil end
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if table.find(dangerousParts, obj.Name) and obj:IsA("BasePart") then
+    for _, obj in pairs(cachedDangerousParts) do
+        if obj and obj.Parent then
             pcall(function() obj.CanTouch = true end)
         end
     end
+    cachedDangerousParts = {}
 end
 
 local function BoostFPS() Lighting.GlobalShadows = false; Lighting.FogEnd = 100000; Lighting.Brightness = 2; Lighting.ClockTime = 14; for _, obj in pairs(Lighting:GetChildren()) do if obj:IsA("PostEffect") or obj:IsA("Atmosphere") then obj.Enabled = false end end; pcall(function() settings().QualityLevel = Enum.QualityLevel.Level01 end) end
