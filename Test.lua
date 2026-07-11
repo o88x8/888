@@ -26,7 +26,7 @@ local FastAttackConnection = nil
 
 local teleporting = false
 local targetPlayer = nil
-local teleportCooldown = 0.1
+local teleportCooldown = 0.01 -- Made TP way faster (was 0.1)
 
 -- Spectate
 local SpectateEnabled = false
@@ -989,7 +989,7 @@ local function UpdateESP()
                 local espText = roleTag .. '<font color="#00ff88">'..p.Name..'</font>\n<font color="#00bbff">HP: '..hp..' | '..dist..'m</font>'
                 
                 if dist <= 500 then
-                    -- CLOSE RANGE: Use 3D BillboardGui (Looks natural above head)
+                    -- CLOSE RANGE: Use 3D BillboardGui
                     if ESPObjects[p] and ESPObjects[p]:IsA("TextLabel") then
                         ESPObjects[p]:Destroy()
                         ESPObjects[p] = nil
@@ -1024,13 +1024,12 @@ local function UpdateESP()
                         ESPObjects[p].Adornee = h
                     end
                 else
-                    -- FAR RANGE: Use 2D Screen ESP (Infinite range, fixed neat size)
+                    -- FAR RANGE: Use 2D Screen ESP
                     if ESPObjects[p] and ESPObjects[p]:IsA("BillboardGui") then
                         ESPObjects[p]:Destroy()
                         ESPObjects[p] = nil
                     end
                     
-                    -- Get exact screen position of their body
                     local screenPos, onScreen = cam:WorldToViewportPoint(hr.Position)
                     
                     if not ESPObjects[p] then
@@ -1053,8 +1052,8 @@ local function UpdateESP()
                     end
                     
                     local label = ESPObjects[p]
-                    -- Subtract 20 pixels from Y to force it ABOVE the player on screen
-                    label.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y - 20)
+                    -- Subtract 50 pixels from Y to force it visibly ABOVE the dot
+                    label.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y - 50)
                     label.Visible = onScreen 
                 end
             else
