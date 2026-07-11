@@ -954,10 +954,10 @@ local function isStaffUser(userId)
     return false
 end
 
--- === INFINITE RANGE SCREEN ESP ===
+-- === HYBRID ESP (Normal close, Infinite far) ===
 local function ClearESP() 
     for _, o in pairs(ESPObjects) do 
-        if o then o:Destroy() end 
+        if o and o.Parent then o:Destroy() end 
     end 
     ESPObjects = {} 
 end
@@ -988,31 +988,73 @@ local function UpdateESP()
                 
                 local espText = roleTag .. '<font color="#00ff88">'..p.Name..'</font>\n<font color="#00bbff">HP: '..hp..' | '..dist..'m</font>'
                 
-                -- Convert 3D world position to 2D screen position
-                local screenPos, onScreen = cam:WorldToViewportPoint(hr.Position + Vector3.new(0, 3, 0))
-                
-                if not ESPObjects[p] then
-                    local l = Instance.new("TextLabel")
-                    l.Size = UDim2.new(0, 150, 0, isSpecialRole and 50 or 40)
-                    l.AnchorPoint = Vector2.new(0.5, 0)
-                    l.BackgroundTransparency = 1
-                    l.TextColor3 = theme.textMain
-                    l.TextStrokeTransparency = 0.5
-                    l.TextStrokeColor3 = Color3.new(0,0,0)
-                    l.Font = Enum.Font.GothamBold
-                    l.TextSize = 12
-                    l.TextScaled = true
-                    l.RichText = true
-                    l.Text = espText
-                    l.Parent = HubGui
-                    ESPObjects[p] = l
+                if dist <= 500 then
+                    -- CLOSE RANGE: Use 3D BillboardGui (Looks natural above head)
+                    if ESPObjects[p] and ESPObjects[p]:IsA("TextLabel") then
+                        ESPObjects[p]:Destroy()
+                        ESPObjects[p] = nil
+                    end
+                    
+                    if not ESPObjects[p] then
+                        local bbSize = UDim2.new(0, 120, 0, isSpecialRole and 55 or 40)
+                        local bb = Instance.new("BillboardGui")
+                        bb.Adornee = h
+                        bb.Size = bbSize
+                        bb.StudsOffset = Vector3.new(0, 3, 0)
+                        bb.AlwaysOnTop = true
+                        bb.Parent = h
+                        
+                        local l = Instance.new("TextLabel")
+                        l.Name = "ESPText"
+                        l.Size = UDim2.new(1, 0, 1, 0)
+                        l.BackgroundTransparency = 1
+                        l.TextColor3 = theme.textMain
+                        l.TextStrokeTransparency = 0.5
+                        l.TextStrokeColor3 = Color3.new(0, 0, 0)
+                        l.Font = Enum.Font.GothamBold
+                        l.TextSize = 11
+                        l.TextScaled = true
+                        l.RichText = true
+                        l.Text = espText
+                        l.Parent = bb
+                        ESPObjects[p] = bb
+                    else
+                        local txt = ESPObjects[p]:FindFirstChild("ESPText")
+                        if txt then txt.Text = espText end
+                        ESPObjects[p].Adornee = h
+                    end
                 else
-                    ESPObjects[p].Text = espText
+                    -- FAR RANGE: Use 2D Screen ESP (Infinite range, fixed neat size)
+                    if ESPObjects[p] and ESPObjects[p]:IsA("BillboardGui") then
+                        ESPObjects[p]:Destroy()
+                        ESPObjects[p] = nil
+                    end
+                    
+                    local screenPos, onScreen = cam:WorldToViewportPoint(hr.Position + Vector3.new(0, 3, 0))
+                    
+                    if not ESPObjects[p] then
+                        local l = Instance.new("TextLabel")
+                        l.Size = UDim2.new(0, 150, 0, 40) -- Fixed size so it doesn't get huge
+                        l.AnchorPoint = Vector2.new(0.5, 0)
+                        l.BackgroundTransparency = 1
+                        l.TextColor3 = theme.textMain
+                        l.TextStrokeTransparency = 0.5
+                        l.TextStrokeColor3 = Color3.new(0, 0, 0)
+                        l.Font = Enum.Font.GothamBold
+                        l.TextSize = 13 -- Fixed small text size
+                        l.TextScaled = false -- Prevents it from blowing up
+                        l.RichText = true
+                        l.Text = espText
+                        l.Parent = HubGui
+                        ESPObjects[p] = l
+                    else
+                        ESPObjects[p].Text = espText
+                    end
+                    
+                    local label = ESPObjects[p]
+                    label.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
+                    label.Visible = onScreen -- Hides cleanly if they go behind you
                 end
-                
-                local label = ESPObjects[p]
-                label.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
-                label.Visible = onScreen
             else
                 if ESPObjects[p] then ESPObjects[p]:Destroy() ESPObjects[p] = nil end
             end
