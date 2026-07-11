@@ -277,8 +277,8 @@ local function CreateGUI()
     SideStroke.Thickness = 1
 
     local Pages = {}
-    local TabNames = {"Home", "Combat", "Move", "Visuals", "Utility"}
-    local TabIcons = {"◎", "⚔", "✈", "◎", "⚙"}
+    local TabNames = {"Home", "Combat", "Move", "Visuals", "Utility", "Performance"}
+    local TabIcons = {"◎", "⚔", "✈", "◎", "⚙", "⚡"}
 
     for i, name in ipairs(TabNames) do
         local Tab = Instance.new("TextButton")
@@ -521,7 +521,7 @@ local function CreateGUI()
     local WelText = Instance.new("TextLabel")
     WelText.Size = UDim2.new(1, 0, 0, 220)
     WelText.BackgroundTransparency = 1
-    WelText.Text = "\nVersion 2.0.0\n\nAdded:\n- Spectate\n- Infinite Jump\n- Noclip\n- Spider Climb\n- Box ESP\n- Fullbright\n- FOV Changer\n- Anti AFK\n- FPS Booster\n- Server Actions (Rejoin + Server Hop)\n- Staff Alert\n- Anti Haunted\n- No Fog\n\nImprovements:\n- General Stability improvements\n- Minor bug fixes"
+    WelText.Text = "\nVersion 2.0.0\n\nAdded:\n- Spectate\n- Infinite Jump\n- Noclip\n- Spider Climb\n- Box ESP\n- Fullbright\n- FOV Changer\n- Anti AFK\n- Server Actions (Rejoin + Server Hop)\n- Staff Alert\n- Anti Haunted\n- No Fog\n\nImprovements:\n- General Stability improvements\n- Minor bug fixes"
     WelText.TextColor3 = theme.textMuted
     WelText.Font = Enum.Font.Gotham
     WelText.TextSize = 11
@@ -599,10 +599,8 @@ local function CreateGUI()
     local ESPBtn = CreateToggle(cont10)
     local c11, cont11 = CreateCard(Pages[4].Page, "Box ESP", 2)
     local BoxESPBtn = CreateToggle(cont11)
-    local c13, cont13 = CreateCard(Pages[4].Page, "Fullbright", 3)
-    local FullbrightBtn = CreateToggle(cont13)
 
-    local c14, cont14 = CreateCard(Pages[4].Page, "FOV Changer", 4)
+    local c14, cont14 = CreateCard(Pages[4].Page, "FOV Changer", 3)
     local FOVSlider, FOVLabel = CreateSlider(cont14, "FOV", 30, 120, 70, function(val) FOVValue = val local cam = workspace.CurrentCamera if cam then cam.FieldOfView = val end end)
     FOVSlider.Position = UDim2.new(0, 0, 0, 0)
     local ResetFOVBtn = CreateSmallButton(cont14, "RESET", 60, 0, 50, 24)
@@ -610,27 +608,13 @@ local function CreateGUI()
     local c15, cont15 = CreateCard(Pages[5].Page, "Anti AFK", 1)
     local AntiAFKBtn = CreateToggle(cont15)
 
-    local c16, cont16 = CreateCard(Pages[5].Page, "FPS Booster", 2)
-    local FPSBoostBtn = CreateSmallButton(cont16, "BOOST", 100, 0, 80, 28)
-    FPSBoostBtn.Position = UDim2.new(1, -80, 0, 0)
-    local FPSText = Instance.new("TextLabel")
-    FPSText.Size = UDim2.new(1, -90, 0, 28)
-    FPSText.Position = UDim2.new(0, 0, 0, 0)
-    FPSText.BackgroundTransparency = 1
-    FPSText.Text = "Reduces graphics for better performance"
-    FPSText.TextColor3 = theme.textMuted
-    FPSText.Font = Enum.Font.Gotham
-    FPSText.TextSize = 10
-    FPSText.TextXAlignment = Enum.TextXAlignment.Left
-    FPSText.Parent = cont16
-
-    local c17, cont17 = CreateCard(Pages[5].Page, "Server Actions", 3)
+    local c17, cont17 = CreateCard(Pages[5].Page, "Server Actions", 2)
     local RejoinBtn = CreateSmallButton(cont17, "REJOIN", 170, 0, 80, 28)
     RejoinBtn.Position = UDim2.new(1, -170, 0, 0)
     local ServerHopBtn = CreateSmallButton(cont17, "SERVER HOP", 80, 0, 80, 28)
     ServerHopBtn.Position = UDim2.new(1, -80, 0, 0)
 
-    local c18, cont18 = CreateCard(Pages[5].Page, "Anti Haunted", 4)
+    local c18, cont18 = CreateCard(Pages[5].Page, "Anti Haunted", 3)
     local AntiHauntedBtn = CreateToggle(cont18)
     local AntiHauntedText = Instance.new("TextLabel")
     AntiHauntedText.Size = UDim2.new(1, -110, 0, 28)
@@ -643,7 +627,11 @@ local function CreateGUI()
     AntiHauntedText.TextXAlignment = Enum.TextXAlignment.Left
     AntiHauntedText.Parent = cont18
 
-    local c19, cont19 = CreateCard(Pages[5].Page, "No Fog", 5)
+    -- Performance Tab
+    local c13, cont13 = CreateCard(Pages[6].Page, "Fullbright", 1)
+    local FullbrightBtn = CreateToggle(cont13)
+
+    local c19, cont19 = CreateCard(Pages[6].Page, "No Fog", 2)
     local NoFogBtn = CreateToggle(cont19)
     local NoFogText = Instance.new("TextLabel")
     NoFogText.Size = UDim2.new(1, -110, 0, 28)
@@ -682,7 +670,7 @@ local function CreateGUI()
         InfiniteJumpBtn = InfiniteJumpBtn, NoclipBtn = NoclipBtn, SpiderClimbBtn = SpiderClimbBtn,
         BoxESPBtn = BoxESPBtn, FullbrightBtn = FullbrightBtn,
         FOVLabel = FOVLabel, ResetFOVBtn = ResetFOVBtn, AntiAFKBtn = AntiAFKBtn,
-        FPSBoostBtn = FPSBoostBtn, RejoinBtn = RejoinBtn, ServerHopBtn = ServerHopBtn,
+        RejoinBtn = RejoinBtn, ServerHopBtn = ServerHopBtn,
         SpectateBtn = SpectateBtn,
         KbBtn1 = KbBtn1, KbBtn2 = KbBtn2, KbBtn3 = KbBtn3,
         AntiHauntedBtn = AntiHauntedBtn,
@@ -696,7 +684,7 @@ local PlayerScrollFrame, ESPBtn = UI.PlayerScrollFrame, UI.ESPBtn
 local InfiniteJumpBtn, NoclipBtn, SpiderClimbBtn = UI.InfiniteJumpBtn, UI.NoclipBtn, UI.SpiderClimbBtn
 local BoxESPBtn, FullbrightBtn = UI.BoxESPBtn, UI.FullbrightBtn
 local FOVLabel, ResetFOVBtn, AntiAFKBtn = UI.FOVLabel, UI.ResetFOVBtn, UI.AntiAFKBtn
-local FPSBoostBtn, RejoinBtn, ServerHopBtn = UI.FPSBoostBtn, UI.RejoinBtn, UI.ServerHopBtn
+local RejoinBtn, ServerHopBtn = UI.RejoinBtn, UI.ServerHopBtn
 local SpectateBtn = UI.SpectateBtn
 local KbBtn1, KbBtn2, KbBtn3 = UI.KbBtn1, UI.KbBtn2, UI.KbBtn3
 local AntiHauntedBtn = UI.AntiHauntedBtn
@@ -989,7 +977,6 @@ local function UpdateESP()
                 local espText = roleTag .. '<font color="#00ff88">'..p.Name..'</font>\n<font color="#00bbff">HP: '..hp..' | '..dist..'m</font>'
                 
                 if dist <= 500 then
-                    -- CLOSE RANGE: Use 3D BillboardGui
                     if ESPObjects[p] and ESPObjects[p]:IsA("TextLabel") then
                         ESPObjects[p]:Destroy()
                         ESPObjects[p] = nil
@@ -1024,7 +1011,6 @@ local function UpdateESP()
                         ESPObjects[p].Adornee = h
                     end
                 else
-                    -- FAR RANGE: Use 2D Screen ESP
                     if ESPObjects[p] and ESPObjects[p]:IsA("BillboardGui") then
                         ESPObjects[p]:Destroy()
                         ESPObjects[p] = nil
@@ -1035,7 +1021,7 @@ local function UpdateESP()
                     if not ESPObjects[p] then
                         local l = Instance.new("TextLabel")
                         l.Size = UDim2.new(0, 150, 0, 40) 
-                        l.AnchorPoint = Vector2.new(0.5, 1) -- Bottom center anchor
+                        l.AnchorPoint = Vector2.new(0.5, 1) 
                         l.BackgroundTransparency = 1
                         l.TextColor3 = theme.textMain
                         l.TextStrokeTransparency = 0.5
@@ -1052,7 +1038,6 @@ local function UpdateESP()
                     end
                     
                     local label = ESPObjects[p]
-                    -- Subtract 50 pixels from Y to force it visibly ABOVE the dot
                     label.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y - 50)
                     label.Visible = onScreen 
                 end
@@ -1155,7 +1140,6 @@ local function StopNoFog()
     end
 end
 
-local function BoostFPS() Lighting.GlobalShadows = false; Lighting.FogEnd = 100000; Lighting.Brightness = 2; Lighting.ClockTime = 14; for _, obj in pairs(Lighting:GetChildren()) do if obj:IsA("PostEffect") or obj:IsA("Atmosphere") then obj.Enabled = false end end; pcall(function() settings().QualityLevel = Enum.QualityLevel.Level01 end) end
 local function RejoinServer() pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Players.LocalPlayer) end) end
 local function ServerHop() pcall(function() local servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")); for _, server in pairs(servers.data) do if server.playing < server.maxPlayers and server.id ~= game.JobId then TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, Players.LocalPlayer); return end end end) end
 
@@ -1196,7 +1180,6 @@ NoclipBtn.MouseButton1Click:Connect(function() NoclipEnabled = not NoclipEnabled
 SpiderClimbBtn.MouseButton1Click:Connect(function() SpiderClimbEnabled = not SpiderClimbEnabled; ToggleButtonStyle(SpiderClimbBtn, SpiderClimbEnabled); if SpiderClimbEnabled then StartSpiderClimb() else StopSpiderClimb() end end)
 
 ResetFOVBtn.MouseButton1Click:Connect(function() FOVValue = DefaultFOV; if workspace.CurrentCamera then workspace.CurrentCamera.FieldOfView = DefaultFOV end; FOVLabel.Text = "FOV: "..DefaultFOV end)
-FPSBoostBtn.MouseButton1Click:Connect(BoostFPS)
 RejoinBtn.MouseButton1Click:Connect(RejoinServer)
 ServerHopBtn.MouseButton1Click:Connect(ServerHop)
 
