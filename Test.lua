@@ -804,7 +804,7 @@ Players.PlayerRemoving:Connect(function(player)
         StopSpectate()
         TPStatus.Text = "Status: Player left"
     end
-    if ESPObjects[player] then if ESPObjects[player].Parent then ESPObjects[player].Parent:Destroy() end ESPObjects[player] = nil end
+    if ESPObjects[player] then ESPObjects[player]:Destroy() ESPObjects[player] = nil end
     if BoxESPObjects[player] then BoxESPObjects[player]:Destroy(); BoxESPObjects[player] = nil end
     refreshPlayerList()
 end)
@@ -954,15 +954,27 @@ local function isStaffUser(userId)
     return false
 end
 
-local function ClearESP() for _, o in pairs(ESPObjects) do if o and o.Parent then o.Parent:Destroy() end end ESPObjects = {} end
+-- === INFINITE RANGE SCREEN ESP ===
+local function ClearESP() 
+    for _, o in pairs(ESPObjects) do 
+        if o then o:Destroy() end 
+    end 
+    ESPObjects = {} 
+end
+
 local function UpdateESP()
-    local mc = Players.LocalPlayer.Character; local mhr = mc and mc:FindFirstChild("HumanoidRootPart")
-    if not mhr then return end
+    local cam = workspace.CurrentCamera
+    if not cam then return end
+    
+    local mc = Players.LocalPlayer.Character
+    local mhr = mc and mc:FindFirstChild("HumanoidRootPart")
+    
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= Players.LocalPlayer then
             local c = p.Character; local h = c and c:FindFirstChild("Head"); local hm = c and c:FindFirstChild("Humanoid"); local hr = c and c:FindFirstChild("HumanoidRootPart")
             if h and hm and hr and hm.Health > 0 then
-                local dist, hp = math.floor((hr.Position - mhr.Position).Magnitude), math.floor(hm.Health)
+                local dist = mhr and math.floor((hr.Position - mhr.Position).Magnitude) or 0
+                local hp = math.floor(hm.Health)
                 
                 local roleTag = ""
                 local isSpecialRole = false
@@ -976,16 +988,33 @@ local function UpdateESP()
                 
                 local espText = roleTag .. '<font color="#00ff88">'..p.Name..'</font>\n<font color="#00bbff">HP: '..hp..' | '..dist..'m</font>'
                 
+                -- Convert 3D world position to 2D screen position
+                local screenPos, onScreen = cam:WorldToViewportPoint(hr.Position + Vector3.new(0, 3, 0))
+                
                 if not ESPObjects[p] then
-                    local bbSize = UDim2.new(0, 120, 0, isSpecialRole and 55 or 40)
-                    local bb = Instance.new("BillboardGui"); bb.Adornee = h; bb.Size = bbSize; bb.StudsOffset = Vector3.new(0, 3, 0); bb.AlwaysOnTop = true; bb.Parent = h
-                    local l = Instance.new("TextLabel"); l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = theme.textMain; l.TextStrokeTransparency = 0.5; l.TextStrokeColor3 = Color3.new(0,0,0); l.Font = Enum.Font.GothamBold; l.TextSize = 11; l.TextScaled = true
-                    l.RichText = true; l.Text = espText; l.Parent = bb; ESPObjects[p] = l
+                    local l = Instance.new("TextLabel")
+                    l.Size = UDim2.new(0, 150, 0, isSpecialRole and 50 or 40)
+                    l.AnchorPoint = Vector2.new(0.5, 0)
+                    l.BackgroundTransparency = 1
+                    l.TextColor3 = theme.textMain
+                    l.TextStrokeTransparency = 0.5
+                    l.TextStrokeColor3 = Color3.new(0,0,0)
+                    l.Font = Enum.Font.GothamBold
+                    l.TextSize = 12
+                    l.TextScaled = true
+                    l.RichText = true
+                    l.Text = espText
+                    l.Parent = HubGui
+                    ESPObjects[p] = l
                 else
-                    ESPObjects[p].Text = espText; ESPObjects[p].Parent.Adornee = h
+                    ESPObjects[p].Text = espText
                 end
+                
+                local label = ESPObjects[p]
+                label.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
+                label.Visible = onScreen
             else
-                if ESPObjects[p] then if ESPObjects[p].Parent then ESPObjects[p].Parent:Destroy() end ESPObjects[p] = nil end
+                if ESPObjects[p] then ESPObjects[p]:Destroy() ESPObjects[p] = nil end
             end
         end
     end
@@ -1024,7 +1053,6 @@ local function StopAntiAFK() if AntiAFKConnection then AntiAFKConnection:Disconn
 local function StartAntiHaunted()
     if AntiHauntedConnection then AntiHauntedConnection:Disconnect() end
     
-    -- Scan once, not every frame
     cachedDangerousParts = {}
     for _, obj in pairs(workspace:GetDescendants()) do
         if table.find(dangerousParts, obj.Name) and obj:IsA("BasePart") then
@@ -1033,7 +1061,6 @@ local function StartAntiHaunted()
         end
     end
     
-    -- Only listen for new parts being added (zero per-frame cost)
     AntiHauntedConnection = workspace.DescendantAdded:Connect(function(obj)
         if not AntiHauntedEnabled then return end
         if table.find(dangerousParts, obj.Name) and obj:IsA("BasePart") then
@@ -1061,13 +1088,11 @@ local function StartNoFog()
     Lighting.FogEnd = 100000
     Lighting.FogStart = 0
     
-    -- Instantly delete FantasySky if it exists
     local fs = Lighting:FindFirstChild("FantasySky")
     if fs then
         fs:Destroy()
     end
     
-    -- Listen to delete it if the server tries to add it back
     FantasySkyConnection = Lighting.ChildAdded:Connect(function(child)
         if child.Name == "FantasySky" then
             child:Destroy()
@@ -1076,13 +1101,11 @@ local function StartNoFog()
 end
 
 local function StopNoFog()
-    -- Restore fog settings
     for prop, value in pairs(OriginalFog) do
         pcall(function() Lighting[prop] = value end)
     end
     OriginalFog = {}
     
-    -- Stop blocking FantasySky from coming back
     if FantasySkyConnection then
         FantasySkyConnection:Disconnect()
         FantasySkyConnection = nil
@@ -1142,7 +1165,6 @@ local function ToggleHub()
     local stroke = MainFrameRef:FindFirstChildOfClass("UIStroke")
     
     if MainFrameRef.Visible then
-        -- Closing animation
         local fadeOut = TweenService:Create(MainFrameRef, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
         if stroke then
             TweenService:Create(stroke, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Transparency = 1}):Play()
@@ -1150,13 +1172,11 @@ local function ToggleHub()
         fadeOut:Play()
         fadeOut.Completed:Connect(function()
             MainFrameRef.Visible = false
-            -- Reset properties silently for next open
             MainFrameRef.BackgroundTransparency = 0.05
             if stroke then stroke.Transparency = 0.85 end
             isTogglingGui = false
         end)
     else
-        -- Opening animation
         MainFrameRef.Visible = true
         MainFrameRef.BackgroundTransparency = 1
         if stroke then stroke.Transparency = 1 end
